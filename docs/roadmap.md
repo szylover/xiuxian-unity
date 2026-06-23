@@ -2,6 +2,12 @@
 
 高层路线图与依赖。逐任务状态以 [GitHub Issues](https://github.com/szylover/xiuxian-unity/issues) 为准。
 
+## 现状（Issue #1–#19 全部完成）
+
+截至 2026-06-23，规划的 19 个 issue 已全部完成：Unity 工程、DLC 数据加载、UnityEngine-free 玩法系统、LogicTests、uGUI 主流程/面板、事件刷新、立绘/场景/动画/VFX/音频、Windows 构建脚本、功能对照与文档均已落地。项目可以打开 `Assets\Scenes\Main.unity` 运行，也可以用 `BuildScript.BuildWindows` 产出 `Build\xiuxian-unity.exe`。
+
+已知后续打磨不再阻塞本路线图，详见 `docs\parity.md`：道侣/双修完整移植、洪荒终局数据驱动、转世深度、部分进阶内容数据化、死亡系统数据化、飞升 UI 流程等。
+
 ## 阶段 0 — 基础设施
 - [x] 工程骨架 + 数据导入（129 JSON）
 - [x] dotnet LogicTests 校验工程
@@ -36,4 +42,4 @@
 ## 阶段 5 — 打磨
 - [x] 通关核心流程 + 出 PC 包冒烟（#17，LogicTests 端到端通关脚本 + Windows Standalone BuildScript/冒烟）
 - [x] 与网页版逐系统功能对照（#18，详见 docs\parity.md；45 ✅ / 11 ⚠️ / 0 ❌）
-- [ ] 文档与资源接入指南
+- [x] 文档与资源接入指南（#19，README + 架构、资源、开发指南；路线图全完成）
