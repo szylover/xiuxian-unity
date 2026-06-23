@@ -47,6 +47,10 @@ namespace Xiuxian.App
         public const string PresentationPortrait = "角色立绘";
         public const string AnimationRealmAdvance = "境界突破";
         public const string VfxToggle = "特效";
+        public const string AudioPanelTitle = "音效";
+        public const string AudioMuteOn = "🔇 静音";
+        public const string AudioMuteOff = "🔊 音效";
+        public const string AudioVolumeLabel = "音量";
         public const string SceneUnknownRegion = "未知之地";
         public const string SceneNoDescription = "云雾缭绕，灵机未明。";
         public const string SceneNoExits = "暂无可去之处";
@@ -393,6 +397,7 @@ namespace Xiuxian.App
         public static string LogSaved(int slot) => $"已保存至存档槽 {slot}。";
         public static string PanelPlaceholder(string title) => $"{title}：{PlaceholderBody}";
         public static string AgeYears(int months) => $"{months / 12}{AgeUnit}";
+        public static string AudioVolumeValue(int value) => $"{value}%";
         public static string AgeMonths(int months) => $"{months / 12}{AgeUnit}{months % 12}{MonthUnit}";
         public static string RootSummary(PlayerSpiritRoots roots) => roots == null || roots.Roots.Count == 0 ? "无灵根" : string.Join("、", roots.Roots.ConvertAll(r => RootName(r.Type) + r.Affinity));
         public static string RootName(string type) => type switch { "metal" => "金", "wood" => "木", "water" => "水", "fire" => "火", "earth" => "土", "thunder" => "雷", "wind" => "风", _ => type };

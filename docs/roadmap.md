@@ -30,7 +30,7 @@
 - [x] 立绘/场景框架（#12，Presentation 层 provider/placeholder + HUD 接入）
 - [x] 关键动画与转场（#13，Tweener + AnimationDirector；#14 粒子、#16 飘字/震屏通过表现层事件继续扩展）
 - [x] 粒子特效（#14，uGUI VfxOverlay + code-only ParticleSystem recipes + AnimationDirector/GameEventBus 接入）
-- [ ] 音效 + BGM
+- [x] 音效 + BGM（#15，运行时 PCM 程序化 SFX/BGM、HUD 音量控件、按钮点击音与事件/动画节拍接入）
 - [ ] 动态反馈（飘字/镜头/震屏）
 
 ## 阶段 5 — 打磨

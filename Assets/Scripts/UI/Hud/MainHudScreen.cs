@@ -10,6 +10,7 @@ using Xiuxian.App;
 using Xiuxian.Core;
 using Xiuxian.Presentation;
 using Xiuxian.Presentation.Animation;
+using Xiuxian.Presentation.Audio;
 using Xiuxian.Presentation.Vfx;
 
 namespace Xiuxian.UI
@@ -31,6 +32,8 @@ namespace Xiuxian.UI
         private PortraitView portraitView;
         private Xiuxian.Presentation.SceneView sceneView;
         private AnimationDirector animationDirector;
+        private AudioDirector audioDirector;
+        private SoundControls soundControls;
         private VfxDirector vfxDirector;
         private VfxOverlay vfxOverlay;
         private RectTransform statusBarRect;
@@ -80,6 +83,7 @@ namespace Xiuxian.UI
                 SceneView = sceneView,
             };
             animationDirector = new AnimationDirector(Context, presentationController, animationTargets);
+            audioDirector = new AudioDirector(Context, AudioManager.Instance, animationDirector);
             vfxDirector = new VfxDirector(Context, animationDirector, vfxOverlay, animationTargets);
             ShowPanel(activePanel);
             presentationController.RefreshAll();
@@ -96,6 +100,7 @@ namespace Xiuxian.UI
             goldText = AddStatus(parent, string.Empty);
             ageText = AddStatus(parent, string.Empty);
             UIBuilder.Layout(UIBuilder.Toggle(parent, UiTexts.VfxToggle, VfxSettings.Enabled, OnVfxToggleChanged).gameObject, preferredWidth: 130, preferredHeight: 52);
+            soundControls = new SoundControls(parent, AudioManager.Instance);
             UIBuilder.Layout(UIBuilder.Button(parent, UiTexts.MainMenu, () => { Context.SaveCurrent(); Context.ExitToStart(); Navigator.Show<StartScreen>(); }).gameObject, preferredWidth: 140, preferredHeight: 52);
             RefreshStatus();
         }
@@ -213,6 +218,8 @@ namespace Xiuxian.UI
         private void OnDestroy()
         {
             if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
+            soundControls?.Dispose();
+            audioDirector?.Dispose();
             vfxDirector?.Dispose();
             animationDirector?.Dispose();
             portraitView?.Dispose();
