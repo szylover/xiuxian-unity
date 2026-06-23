@@ -10,6 +10,7 @@ using Xiuxian.App;
 using Xiuxian.Core;
 using Xiuxian.Presentation;
 using Xiuxian.Presentation.Animation;
+using Xiuxian.Presentation.Vfx;
 
 namespace Xiuxian.UI
 {
@@ -30,6 +31,8 @@ namespace Xiuxian.UI
         private PortraitView portraitView;
         private Xiuxian.Presentation.SceneView sceneView;
         private AnimationDirector animationDirector;
+        private VfxDirector vfxDirector;
+        private VfxOverlay vfxOverlay;
         private RectTransform statusBarRect;
         private RectTransform logRect;
 
@@ -65,15 +68,19 @@ namespace Xiuxian.UI
             logRect = log.GetComponent<RectTransform>();
             UIBuilder.Layout(log, preferredWidth: 390, flexibleHeight: 1);
             BuildLog(log.transform);
+            vfxOverlay = VfxOverlay.Attach(transform);
+            if (vfxOverlay != null) vfxOverlay.SetEnabled(VfxSettings.Enabled);
 
-            animationDirector = new AnimationDirector(Context, presentationController, new AnimationTargets
+            var animationTargets = new AnimationTargets
             {
                 Root = root.transform,
                 StatusBar = statusBarRect,
                 CombatFeedbackArea = logRect,
                 PortraitView = portraitView,
                 SceneView = sceneView,
-            });
+            };
+            animationDirector = new AnimationDirector(Context, presentationController, animationTargets);
+            vfxDirector = new VfxDirector(Context, animationDirector, vfxOverlay, animationTargets);
             ShowPanel(activePanel);
             presentationController.RefreshAll();
             Context.Bus.Subscribe(OnGameEvent);
@@ -88,8 +95,15 @@ namespace Xiuxian.UI
             staminaText = AddStatus(parent, string.Empty);
             goldText = AddStatus(parent, string.Empty);
             ageText = AddStatus(parent, string.Empty);
+            UIBuilder.Layout(UIBuilder.Toggle(parent, UiTexts.VfxToggle, VfxSettings.Enabled, OnVfxToggleChanged).gameObject, preferredWidth: 130, preferredHeight: 52);
             UIBuilder.Layout(UIBuilder.Button(parent, UiTexts.MainMenu, () => { Context.SaveCurrent(); Context.ExitToStart(); Navigator.Show<StartScreen>(); }).gameObject, preferredWidth: 140, preferredHeight: 52);
             RefreshStatus();
+        }
+
+        private void OnVfxToggleChanged(bool enabled)
+        {
+            if (vfxDirector != null) vfxDirector.Enabled = enabled;
+            else VfxSettings.Enabled = enabled;
         }
 
         private TMP_Text AddStatus(Transform parent, string text)
@@ -199,6 +213,7 @@ namespace Xiuxian.UI
         private void OnDestroy()
         {
             if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
+            vfxDirector?.Dispose();
             animationDirector?.Dispose();
             portraitView?.Dispose();
             sceneView?.Dispose();
