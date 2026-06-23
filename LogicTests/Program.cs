@@ -54,6 +54,8 @@ namespace Xiuxian.LogicTests
 
             PrintTotals(db);
 
+            failures += ValidateGameEventBus();
+
             if (!db.Items.TryGetValue("core:hp_pill", out var hpPill))
             {
                 Console.Error.WriteLine("[FAIL] 缺少 core:hp_pill");
@@ -169,6 +171,59 @@ namespace Xiuxian.LogicTests
             foreach (var kv in relevant)
                 Console.Error.WriteLine($"[FAIL] {kv.Key}: 注册 key 冲突 {kv.Value} 次");
             return relevant.Count;
+        }
+
+        private static int ValidateGameEventBus()
+        {
+            int failures = 0;
+            var bus = new GameEventBus();
+
+            int statsCount = 0;
+            int inventoryCount = 0;
+            int allCount = 0;
+            object payloadSeen = null;
+
+            GameEventHandler statsHandler = (in GameEvent gameEvent) =>
+            {
+                statsCount++;
+                payloadSeen = gameEvent.Payload;
+            };
+            GameEventHandler inventoryHandler = (in GameEvent gameEvent) => inventoryCount++;
+            GameEventHandler allHandler = (in GameEvent gameEvent) => allCount++;
+
+            bus.Subscribe(GameEventType.PlayerStatsChanged, statsHandler);
+            bus.Subscribe(GameEventType.InventoryChanged, inventoryHandler);
+            bus.Subscribe(allHandler);
+
+            var payload = new { Label = "payload-roundtrip" };
+            bus.Publish(GameEventType.PlayerStatsChanged, payload);
+            failures += Expect("eventBus.typedOnly", statsCount == 1 && inventoryCount == 0);
+            failures += Expect("eventBus.allSubscriber", allCount == 1);
+            failures += Expect("eventBus.payloadRoundtrip", ReferenceEquals(payload, payloadSeen));
+
+            bus.Publish(GameEventType.InventoryChanged, null);
+            failures += Expect("eventBus.otherType", statsCount == 1 && inventoryCount == 1 && allCount == 2);
+
+            bus.Unsubscribe(GameEventType.PlayerStatsChanged, statsHandler);
+            bus.Unsubscribe(allHandler);
+            bus.Publish(GameEventType.PlayerStatsChanged, null);
+            failures += Expect("eventBus.unsubscribe", statsCount == 1 && allCount == 2);
+
+            int selfRemovingCount = 0;
+            GameEventHandler selfRemoving = null;
+            GameEventHandler second = (in GameEvent gameEvent) => selfRemovingCount += 10;
+            selfRemoving = (in GameEvent gameEvent) =>
+            {
+                selfRemovingCount++;
+                bus.Unsubscribe(GameEventType.QuestChanged, selfRemoving);
+            };
+            bus.Subscribe(GameEventType.QuestChanged, selfRemoving);
+            bus.Subscribe(GameEventType.QuestChanged, second);
+            bus.Publish(GameEventType.QuestChanged, null);
+            bus.Publish(GameEventType.QuestChanged, null);
+            failures += Expect("eventBus.unsubscribeDuringDispatch", selfRemovingCount == 21);
+
+            return failures;
         }
 
         private static int ValidateCoreCultivationSystems(GameDatabase db)

@@ -4,6 +4,7 @@
 
 using UnityEngine;
 using Xiuxian.App;
+using Xiuxian.Core;
 
 namespace Xiuxian.UI
 {
@@ -28,5 +29,6 @@ namespace Xiuxian.UI
         PanelId Id { get; }
         string Title { get; }
         void Build(Transform parent, GameContext context);
+        void OnGameEvent(in GameEvent gameEvent);
     }
 }

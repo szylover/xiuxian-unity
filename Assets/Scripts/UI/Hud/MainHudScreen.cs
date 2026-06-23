@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Xiuxian.App;
+using Xiuxian.Core;
 
 namespace Xiuxian.UI
 {
@@ -15,6 +16,12 @@ namespace Xiuxian.UI
         private readonly Dictionary<PanelId, IPanel> panels = new();
         private Transform panelHost;
         private TMP_Text logText;
+        private TMP_Text nameRealmText;
+        private TMP_Text hpText;
+        private TMP_Text mpText;
+        private TMP_Text staminaText;
+        private TMP_Text goldText;
+        private TMP_Text ageText;
         private PanelId activePanel = PanelId.Cultivation;
 
         protected override void Build()
@@ -45,26 +52,40 @@ namespace Xiuxian.UI
             BuildLog(log.transform);
 
             ShowPanel(activePanel);
+            Context.Bus.Subscribe(OnGameEvent);
         }
 
         private void BuildStatus(Transform parent)
         {
             UIBuilder.Horizontal(parent.gameObject, 12, 18).childAlignment = TextAnchor.MiddleLeft;
-            var p = Context.CurrentPlayer;
-            var realm = Context.Database.Realms.TryGetValue(p.RealmIndex, out var r) ? r.Name : UiTexts.RealmUnknown;
-            AddStatus(parent, $"{p.Name}【{realm}】");
-            AddStatus(parent, $"{UiTexts.Hp} {p.Hp}/{p.MaxHp}");
-            AddStatus(parent, $"{UiTexts.Mp} {p.Mp}/{p.MaxMp}");
-            AddStatus(parent, $"{UiTexts.Stamina} {p.Stamina}/{p.MaxStamina}");
-            AddStatus(parent, $"{UiTexts.Gold} {p.Gold}");
-            AddStatus(parent, $"{UiTexts.Age} {UiTexts.AgeYears(p.Age)}");
+            nameRealmText = AddStatus(parent, string.Empty);
+            hpText = AddStatus(parent, string.Empty);
+            mpText = AddStatus(parent, string.Empty);
+            staminaText = AddStatus(parent, string.Empty);
+            goldText = AddStatus(parent, string.Empty);
+            ageText = AddStatus(parent, string.Empty);
             UIBuilder.Layout(UIBuilder.Button(parent, UiTexts.MainMenu, () => { Context.SaveCurrent(); Context.ExitToStart(); Navigator.Show<StartScreen>(); }).gameObject, preferredWidth: 140, preferredHeight: 52);
+            RefreshStatus();
         }
 
-        private void AddStatus(Transform parent, string text)
+        private TMP_Text AddStatus(Transform parent, string text)
         {
             var label = UIBuilder.Label(parent, text, 22, TextAlignmentOptions.Left);
             UIBuilder.Layout(label.gameObject, preferredWidth: 190, preferredHeight: 52);
+            return label;
+        }
+
+        private void RefreshStatus()
+        {
+            var p = Context.CurrentPlayer;
+            if (p == null || nameRealmText == null) return;
+            var realm = Context.Database.Realms.TryGetValue(p.RealmIndex, out var r) ? r.Name : UiTexts.RealmUnknown;
+            nameRealmText.text = $"{p.Name}【{realm}】";
+            hpText.text = $"{UiTexts.Hp} {p.Hp}/{p.MaxHp}";
+            mpText.text = $"{UiTexts.Mp} {p.Mp}/{p.MaxMp}";
+            staminaText.text = $"{UiTexts.Stamina} {p.Stamina}/{p.MaxStamina}";
+            goldText.text = $"{UiTexts.Gold} {p.Gold}";
+            ageText.text = $"{UiTexts.Age} {UiTexts.AgeYears(p.Age)}";
         }
 
         private void BuildNavigation(Transform parent)
@@ -91,6 +112,7 @@ namespace Xiuxian.UI
 
         private void RefreshLog()
         {
+            if (logText == null) return;
             logText.text = Context.LogEntries.Count == 0 ? UiTexts.NoLog : string.Join("\n", Context.LogEntries);
         }
 
@@ -121,6 +143,41 @@ namespace Xiuxian.UI
             RefreshLog();
         }
 
+        private void OnGameEvent(in GameEvent gameEvent)
+        {
+            if (IsStatusEvent(gameEvent.Type)) RefreshStatus();
+            if (gameEvent.Type == GameEventType.LogAppended || gameEvent.Type == GameEventType.ExitToStart) RefreshLog();
+            if (panels.TryGetValue(activePanel, out var panel)) panel.OnGameEvent(in gameEvent);
+        }
+
+        private static bool IsStatusEvent(GameEventType type)
+        {
+            switch (type)
+            {
+                case GameEventType.PlayerCreated:
+                case GameEventType.PlayerLoaded:
+                case GameEventType.PlayerSaved:
+                case GameEventType.PlayerChanged:
+                case GameEventType.PlayerStatsChanged:
+                case GameEventType.RealmChanged:
+                case GameEventType.CultivationChanged:
+                case GameEventType.BodyCultivationChanged:
+                case GameEventType.CurrencyChanged:
+                case GameEventType.TimeAdvanced:
+                case GameEventType.CombatChanged:
+                case GameEventType.InventoryChanged:
+                case GameEventType.EquipmentChanged:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
+        }
+
         private sealed class PlaceholderPanel : IPanel
         {
             public PanelId Id { get; }
@@ -132,6 +189,8 @@ namespace Xiuxian.UI
                 UIBuilder.Layout(UIBuilder.Label(parent, Title, 42).gameObject, preferredHeight: 76);
                 UIBuilder.Layout(UIBuilder.Label(parent, UiTexts.PanelPlaceholder(Title), 26, TextAlignmentOptions.Center).gameObject, preferredHeight: 140);
             }
+
+            public void OnGameEvent(in GameEvent gameEvent) { }
         }
 
         private sealed class SavePanel : IPanel
@@ -144,6 +203,8 @@ namespace Xiuxian.UI
                 UIBuilder.Layout(UIBuilder.Label(parent, UiTexts.Save, 42).gameObject, preferredHeight: 76);
                 UIBuilder.Layout(UIBuilder.Button(parent, UiTexts.SaveNow, context.SaveCurrent).gameObject, preferredWidth: 280, preferredHeight: 64);
             }
+
+            public void OnGameEvent(in GameEvent gameEvent) { }
         }
     }
 }

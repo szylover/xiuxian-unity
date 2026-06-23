@@ -24,7 +24,7 @@ namespace Xiuxian.App
         public IReadOnlyList<string> AvailablePackIds { get; }
         public HashSet<string> SelectedPackIds { get; } = new();
         public List<string> LogEntries { get; } = new();
-        public event Action<string, object> AppEvent;
+        public GameEventBus Bus { get; } = new();
 
         public GameContext(IDataSource dataSource, SaveSystem saveSystem)
         {
@@ -47,7 +47,7 @@ namespace Xiuxian.App
                 loader.LoadPackage(id);
             SelectedPackIds.Clear();
             foreach (var id in Database.EnabledPackIds) SelectedPackIds.Add(id);
-            Publish("database-loaded", Database);
+            Publish(GameEventType.DatabaseLoaded, Database);
         }
 
         public Player CreateNewPlayer(int slotIndex, string playerName, string gender, int appearance, PreviewRoll preview, IEnumerable<string> enabledPacks)
@@ -64,7 +64,8 @@ namespace Xiuxian.App
             }, rng);
             AddLog(UiTexts.LogNewGame(CurrentPlayer.Name));
             SaveCurrent();
-            Publish("player-created", CurrentPlayer);
+            Publish(GameEventType.PlayerCreated, CurrentPlayer);
+            PublishPlayerChanges(GameEventType.PlayerStatsChanged, GameEventType.InventoryChanged, GameEventType.EquipmentChanged, GameEventType.TechniquesChanged, GameEventType.MapChanged, GameEventType.QuestChanged, GameEventType.SectChanged);
             return CurrentPlayer;
         }
 
@@ -76,7 +77,8 @@ namespace Xiuxian.App
             CurrentPlayer = player;
             LoadDatabase(player.EnabledDLCs.Count > 0 ? player.EnabledDLCs : new[] { "core" });
             AddLog(UiTexts.LogLoaded(player.Name));
-            Publish("player-loaded", player);
+            Publish(GameEventType.PlayerLoaded, player);
+            PublishPlayerChanges(GameEventType.PlayerStatsChanged, GameEventType.InventoryChanged, GameEventType.EquipmentChanged, GameEventType.TechniquesChanged, GameEventType.MapChanged, GameEventType.QuestChanged, GameEventType.SectChanged);
             return true;
         }
 
@@ -85,24 +87,40 @@ namespace Xiuxian.App
             if (CurrentPlayer == null) return;
             SaveSystem.SaveSlot(CurrentSlot, CurrentPlayer);
             AddLog(UiTexts.LogSaved(CurrentSlot + 1));
-            Publish("player-saved", CurrentPlayer);
+            Publish(GameEventType.PlayerSaved, CurrentPlayer);
         }
 
         public void ExitToStart()
         {
             CurrentPlayer = null;
             LogEntries.Clear();
-            Publish("exit-to-start", null);
+            Publish(GameEventType.ExitToStart, null);
         }
 
         public void AddLog(string message)
         {
             LogEntries.Add(message);
-            Publish("log-added", message);
+            Publish(GameEventType.LogAppended, message);
         }
 
-        public void Publish(string eventName, object payload)
-            => AppEvent?.Invoke(eventName, payload);
+        public void Publish(GameEvent gameEvent)
+            => Bus.Publish(gameEvent);
+
+        public void Publish(GameEventType type, object payload = null)
+            => Bus.Publish(type, payload);
+
+        public void PublishPlayerChanges(params GameEventType[] changeTypes)
+        {
+            if (changeTypes == null || changeTypes.Length == 0)
+            {
+                Publish(GameEventType.PlayerChanged, CurrentPlayer);
+                return;
+            }
+
+            for (var i = 0; i < changeTypes.Length; i++)
+                Publish(changeTypes[i], CurrentPlayer);
+            Publish(GameEventType.PlayerChanged, CurrentPlayer);
+        }
 
         private static string PackageSortKey(string id)
             => id == "core" ? string.Empty : id ?? string.Empty;
