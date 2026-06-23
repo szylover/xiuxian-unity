@@ -34,10 +34,14 @@
 Thumbs.db
 
 # Build artifacts
+/Build/
 *.apk
 *.aab
 *.unitypackage
 *.app
+*.log
+*_Data/
+*_BackUpThisFolder_ButDontShipItWithYourGame/
 
 # dotnet logic test harness
 /LogicTests/bin/

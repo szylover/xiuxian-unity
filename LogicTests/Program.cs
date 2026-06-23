@@ -85,6 +85,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateAdvancedProgressionSystems(db);
             failures += ValidateProceduralSystems(db);
             failures += ValidateSaveLoadSystems(db);
+            failures += Playthrough.Run(db);
 
             if (failures == 0)
             {

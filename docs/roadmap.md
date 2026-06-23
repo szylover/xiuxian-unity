@@ -34,6 +34,6 @@
 - [x] 动态反馈（#16，浮动战斗/收益数字、Toast 队列、uGUI RectTransform 震屏与减动效开关）
 
 ## 阶段 5 — 打磨
-- [ ] 通关核心流程 + 出 PC 包冒烟
+- [x] 通关核心流程 + 出 PC 包冒烟（#17，LogicTests 端到端通关脚本 + Windows Standalone BuildScript/冒烟）
 - [ ] 与网页版逐系统功能对照
 - [ ] 文档与资源接入指南
