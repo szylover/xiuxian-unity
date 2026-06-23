@@ -79,7 +79,11 @@ namespace Xiuxian.Systems
         private sealed class AlchemyCounterState { public int TotalCrafted; public int ExcellentCount; }
         private static AlchemyCounterState GetAlchemyState(Player player)
         {
-            if (player.Systems.TryGetValue("alchemy", out var existing) && existing is AlchemyCounterState typed) return typed;
+            if (player.Systems.TryGetValue("alchemy", out var existing))
+            {
+                if (existing is AlchemyCounterState typed) return typed;
+                if (existing is Newtonsoft.Json.Linq.JObject jo) return jo.ToObject<AlchemyCounterState>() ?? new AlchemyCounterState();
+            }
             return new AlchemyCounterState();
         }
     }

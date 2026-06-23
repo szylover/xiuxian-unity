@@ -19,7 +19,7 @@
 - [x] 世界与社交：事件/任务/对话/NPC/地图/门派/秘境/悬赏（运行时事件引擎已移植；程序化事件生成仍归 #7）
 - [x] 进阶机制：天赋命格/悟道/正邪/心魔/排行/PvP/转世/飞升/洪荒终局/学习/成就/编年史（#6，UnityEngine-free Systems/Progression + LogicTests 覆盖）
 - [x] 程序化生成：事件/物品/妖兽/功法（#7，UnityEngine-free Systems/Procedural + LogicTests 覆盖）
-- [ ] 存档/读档
+- [x] 存档/读档（#8，多槽位 JSON 存档 + UnityEngine-free SaveSystem）
 
 ## 阶段 3 — uGUI 表现层
 - [ ] 主场景 + 启动/角色创建/DLC 选择 + HUD + 面板容器/导航
