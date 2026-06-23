@@ -26,6 +26,13 @@ namespace Xiuxian.Systems
         public readonly List<string> Logs = new();
     }
 
+    public sealed class CombatHitSnapshot
+    {
+        public string SourceName, TargetName;
+        public int Damage;
+        public bool IsCrit, IsDodge, FromPlayer;
+    }
+
     public sealed class SkillState
     {
         public int CooldownLeft, TotalMpUsed, TotalStaminaUsed, UseCount;
@@ -48,6 +55,7 @@ namespace Xiuxian.Systems
         public int PlayerHpLeft, ExpGained, GoldGained, MpUsed, SkillUseCount, MonsterMaxHp, PlayerMaxHp, PlayerMaxMp, BodyExpGained;
         public readonly List<string> Logs = new();
         public readonly List<RoundSnapshot> Snapshots = new();
+        public readonly List<CombatHitSnapshot> HitSnapshots = new();
     }
 
     public sealed class ActiveSkillInfo
@@ -197,6 +205,7 @@ namespace Xiuxian.Systems
                             divineSkillState.CooldownLeft = activeArt.Cooldown ?? 0;
                             var artDmg = DivineArtSystem.CalcDamage(player, buffedPlayer, activeArt, currentMonster, mHp, rng);
                             mHp -= artDmg.Damage;
+                            AddHitSnapshot(result, activeArt.Name, monster.Name, artDmg, true);
                             logs.Add(CombatTexts.ArtUse(activeArt.Name, activeArt.HitCount ?? 1, artDmg.Damage, activeArt.MpCost ?? 0));
                             logs.AddRange(artDmg.Logs);
                             ApplyEffects(activeArt.Effects, activeArt.Name, monster.Name, buffedPlayer.MaxHp, ref pHp, ref monsterCurrentDef, ref monsterCurrentAtk, monsterEffects, playerEffects, logs, mHp);
@@ -215,6 +224,7 @@ namespace Xiuxian.Systems
                             skillState.CooldownLeft = TokenInt(skillInfo.Skill, "cooldown");
                             var skillDmg = CalcSkillDamage(buffedPlayer, currentMonster, skillInfo.Skill, skillInfo.AptitudeBonus, mHp, rng);
                             mHp -= skillDmg.Damage;
+                            AddHitSnapshot(result, (string)skillInfo.Skill["name"] ?? skillInfo.Def.Name, monster.Name, skillDmg, true);
                             logs.Add(CombatTexts.SkillUse(skillInfo.Def.Name, (string)skillInfo.Skill["name"], TokenInt(skillInfo.Skill, "hitCount", 1), skillDmg.Damage, mpCost));
                             logs.AddRange(skillDmg.Logs);
                             ApplyEffects(skillInfo.Skill["effect"] == null ? null : new List<JToken> { skillInfo.Skill["effect"] }, (string)skillInfo.Skill["name"], monster.Name, buffedPlayer.MaxHp, ref pHp, ref monsterCurrentDef, ref monsterCurrentAtk, monsterEffects, playerEffects, logs, mHp);
@@ -224,6 +234,7 @@ namespace Xiuxian.Systems
                         {
                             var dmg = CalcDamage(buffedPlayer, currentMonster, rng);
                             mHp -= dmg.Damage;
+                            AddHitSnapshot(result, buffedPlayer.Name, monster.Name, dmg, true);
                             logs.AddRange(dmg.Logs);
                         }
                     }
@@ -235,6 +246,7 @@ namespace Xiuxian.Systems
                         attackingMonster.Atk = monsterCurrentAtk;
                         var dmg = CalcDamage(attackingMonster, buffedPlayer, rng);
                         int actual = dmg.Damage;
+                        AddHitSnapshot(result, attackingMonster.Name, buffedPlayer.Name, dmg, false);
                         logs.AddRange(dmg.Logs);
                         if (actual > 0)
                         {
@@ -350,9 +362,25 @@ namespace Xiuxian.Systems
                 if (!dodge && defender.PhysiqueDmgReduce > 0) dmg = Math.Floor(dmg * (1 - Math.Min(0.50, defender.PhysiqueDmgReduce / 100.0)));
                 int final = (int)Math.Floor(dmg);
                 result.Damage += final;
+                result.IsCrit |= crit;
+                result.IsDodge |= dodge;
                 if (hitCount > 1) result.Logs.Add(dodge ? CombatTexts.SegmentDodge(hit + 1) : crit ? CombatTexts.SegmentCrit(hit + 1, final) : CombatTexts.SegmentHit(hit + 1, final));
             }
             return result;
+        }
+
+        private static void AddHitSnapshot(CombatResult result, string sourceName, string targetName, DamageResult damage, bool fromPlayer)
+        {
+            if (result == null || damage == null) return;
+            result.HitSnapshots.Add(new CombatHitSnapshot
+            {
+                SourceName = sourceName,
+                TargetName = targetName,
+                Damage = damage.Damage,
+                IsCrit = damage.IsCrit,
+                IsDodge = damage.IsDodge,
+                FromPlayer = fromPlayer,
+            });
         }
 
         private static bool TryUseSkill(JToken skill, SkillState state, int mp, int stamina, IRng rng)

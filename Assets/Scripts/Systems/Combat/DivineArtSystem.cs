@@ -101,6 +101,8 @@ namespace Xiuxian.Systems
                 }
                 int finalDmg = (int)Math.Floor(dmg);
                 result.Damage += finalDmg;
+                result.IsCrit |= crit;
+                result.IsDodge |= dodge;
                 if (hitCount > 1) result.Logs.Add(dodge ? CombatTexts.SegmentDodge(hit + 1) : crit ? CombatTexts.SegmentCrit(hit + 1, finalDmg) : CombatTexts.SegmentHit(hit + 1, finalDmg));
             }
             if (countered) result.Logs.Add(CombatTexts.ElementCounter(ElementTable.CounterMultiplier));

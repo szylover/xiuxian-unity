@@ -82,10 +82,10 @@ namespace Xiuxian.Presentation.Vfx
             RefreshAmbient(palette);
         }
 
-        private void OnCombatFeedbackRequested(ThemePalette palette)
+        private void OnCombatFeedbackRequested(CombatFeedbackRequest request)
         {
             if (!CanPlay()) return;
-            Play(targets.CombatFeedbackArea ?? targets.StatusBar, VfxLibrary.CombatHit(palette));
+            Play(targets.CombatFeedbackArea ?? targets.StatusBar, VfxLibrary.CombatHit(request?.Palette ?? CurrentPalette()));
         }
 
         private void OnGameEvent(in GameEvent gameEvent)

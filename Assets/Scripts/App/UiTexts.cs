@@ -47,6 +47,7 @@ namespace Xiuxian.App
         public const string PresentationPortrait = "角色立绘";
         public const string AnimationRealmAdvance = "境界突破";
         public const string VfxToggle = "特效";
+        public const string FeedbackToggle = "动态反馈";
         public const string AudioPanelTitle = "音效";
         public const string AudioMuteOn = "🔇 静音";
         public const string AudioMuteOff = "🔊 音效";
@@ -462,6 +463,18 @@ namespace Xiuxian.App
         public static string HeartDemonDebuffLine(string name, int months) => $"{name}：剩余 {months} 月";
         public static string HeartDemonHistoryLine(int age, string source, string outcome, int value) => $"{CompletedAtMonths(age)} {HeartDemonSource(source)} / {HeartDemonOutcome(outcome)}：{value}";
         public static string HeartDemonSuppressed => "心魔已在压制中";
+        public const string FeedbackDodge = "闪避";
+        public const string ToastRealmAdvanced = "境界突破，灵机涌动！";
+        public const string ToastBreakthroughFailed = "突破受阻，道心震荡。";
+        public const string ToastAchievementUnlocked = "成就已解锁！";
+        public const string ToastQuestUpdated = "任务进度已更新。";
+        public const string ToastDanger = "危机临身，请速速应对！";
+        public static string FeedbackDamage(int damage) => damage <= 0 ? "未伤" : $"-{damage}";
+        public static string FeedbackCritDamage(int damage) => damage <= 0 ? "会心未伤" : $"暴击 -{damage}";
+        public static string FeedbackHeal(int amount) => $"+{amount}";
+        public static string FeedbackGoldGain(int amount) => $"{Gold} +{amount}";
+        public static string FeedbackItemGain(string name, int count) => $"获得 {name} ×{count}";
+        public static string FeedbackCultivationGain(int amount) => $"{Cultivation} +{amount}";
         public static string RankingDimensionName(string id) => id switch { "core:realm_progress" => "境界进度", "core:combat_power" => "战力榜", "core:wealth" => "财富榜", "core:reputation" => "声望榜", "core:technique_mastery" => "功法造诣", "core:heaven_chosen" => "天骄榜", "core:prodigy" => "潜龙榜", _ => id ?? Unknown };
         public static string RankingBoardName(string board) => board == "celestial" ? "天榜" : "风云榜";
         public static string RankingSourceName(string source) => source == "player" ? "玩家" : source == "npc" ? "修士" : source ?? Unknown;

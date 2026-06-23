@@ -18,6 +18,12 @@ namespace Xiuxian.Presentation.Animation
         public SceneView SceneView;
     }
 
+    public sealed class CombatFeedbackRequest
+    {
+        public ThemePalette Palette;
+        public CombatFeedbackPayload Payload;
+    }
+
     public sealed class AnimationDirector : IDisposable
     {
         private readonly GameContext context;
@@ -46,7 +52,7 @@ namespace Xiuxian.Presentation.Animation
         public event Action<ThemePalette> BreakthroughFailed;
         public event Action<ThemePalette> RealmAdvanced;
         /// <summary>Issue #16 can attach floating text or real screen/camera shake to this lightweight UI feedback hook.</summary>
-        public event Action<ThemePalette> CombatFeedbackRequested;
+        public event Action<CombatFeedbackRequest> CombatFeedbackRequested;
         public event Action GameOverFadeRequested;
 
         public void Dispose()
@@ -96,7 +102,7 @@ namespace Xiuxian.Presentation.Animation
                     break;
                 case GameEventType.CombatChanged:
                     UiTransitionLibrary.PlayCombatHit(targets.CombatFeedbackArea ?? targets.StatusBar, Color.red);
-                    CombatFeedbackRequested?.Invoke(palette);
+                    CombatFeedbackRequested?.Invoke(new CombatFeedbackRequest { Palette = palette, Payload = gameEvent.Payload as CombatFeedbackPayload });
                     break;
                 case GameEventType.GameOver:
                     UiTransitionLibrary.PlayGameOverFade(targets.Root);
