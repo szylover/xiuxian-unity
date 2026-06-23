@@ -581,6 +581,7 @@ namespace Xiuxian.LogicTests
             var eq1 = EquipGenerator.GenerateEquip(db, a, new GenerateEquipOptions { SlotFilter = "weapon", ForcedQuality = "treasure", Seed = 7003 });
             var eq2 = EquipGenerator.GenerateEquip(db, b, new GenerateEquipOptions { SlotFilter = "weapon", ForcedQuality = "treasure", Seed = 7003 });
             failures += Expect("procedural.equip.sameSeed", SameJson(eq1, eq2));
+            failures += Expect("procedural.equip.qualityText", eq1.FinalName.Contains(ProceduralTexts.QualityTreasure));
             EquipmentSystem.GetProceduralItemState(player).GeneratedEquips.Add(eq1);
             InventorySystem.AddItem(player, eq1.InstanceId, 1);
             int atkBefore = player.Atk;

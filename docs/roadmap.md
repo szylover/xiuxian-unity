@@ -35,5 +35,5 @@
 
 ## 阶段 5 — 打磨
 - [x] 通关核心流程 + 出 PC 包冒烟（#17，LogicTests 端到端通关脚本 + Windows Standalone BuildScript/冒烟）
-- [ ] 与网页版逐系统功能对照
+- [x] 与网页版逐系统功能对照（#18，详见 docs\parity.md；45 ✅ / 11 ⚠️ / 0 ❌）
 - [ ] 文档与资源接入指南
