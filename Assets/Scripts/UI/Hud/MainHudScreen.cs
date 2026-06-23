@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Xiuxian.App;
 using Xiuxian.Core;
+using Xiuxian.Presentation;
 
 namespace Xiuxian.UI
 {
@@ -24,10 +25,14 @@ namespace Xiuxian.UI
         private TMP_Text goldText;
         private TMP_Text ageText;
         private PanelId activePanel = PanelId.Status;
+        private PresentationController presentationController;
+        private PortraitView portraitView;
+        private Xiuxian.Presentation.SceneView sceneView;
 
         protected override void Build()
         {
             RegisterPanels();
+            presentationController = new PresentationController(Context);
             var root = UIBuilder.Panel(transform, "HudRoot", new Color(0.035f, 0.028f, 0.022f, 1f));
             UIBuilder.Stretch(root.GetComponent<RectTransform>());
             UIBuilder.Vertical(root, 8, 8);
@@ -44,15 +49,19 @@ namespace Xiuxian.UI
             UIBuilder.Layout(nav, preferredWidth: 270, flexibleHeight: 1);
             BuildNavigation(nav.transform);
 
-            var center = UIBuilder.Panel(body.transform, "PanelHost", new Color(0.07f, 0.055f, 0.04f, 0.92f));
+            var center = UIBuilder.Panel(body.transform, "PanelHost", new Color(0.07f, 0.055f, 0.04f, 0.72f));
             UIBuilder.Layout(center, flexibleWidth: 1, flexibleHeight: 1);
-            panelHost = center.transform;
+            sceneView = new Xiuxian.Presentation.SceneView(center.transform, presentationController);
+            var panelLayer = UIBuilder.Rect("PanelContent", center.transform);
+            UIBuilder.Stretch(panelLayer.GetComponent<RectTransform>());
+            panelHost = panelLayer.transform;
 
             var log = UIBuilder.Panel(body.transform, "GameLog", new Color(0.05f, 0.04f, 0.035f, 0.94f));
             UIBuilder.Layout(log, preferredWidth: 390, flexibleHeight: 1);
             BuildLog(log.transform);
 
             ShowPanel(activePanel);
+            presentationController.RefreshAll();
             Context.Bus.Subscribe(OnGameEvent);
         }
 
@@ -92,6 +101,7 @@ namespace Xiuxian.UI
         private void BuildNavigation(Transform parent)
         {
             UIBuilder.Vertical(parent.gameObject, 8, 8);
+            portraitView = new PortraitView(parent, presentationController);
             var content = UIBuilder.ScrollList(parent, "NavScroll");
             UIBuilder.Layout(content.transform.parent.gameObject, flexibleHeight: 1);
             foreach (var category in categories)
@@ -174,6 +184,9 @@ namespace Xiuxian.UI
         private void OnDestroy()
         {
             if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
+            portraitView?.Dispose();
+            sceneView?.Dispose();
+            presentationController?.Dispose();
         }
     }
 }

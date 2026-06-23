@@ -27,7 +27,7 @@
 - [x] 状态→UI 事件刷新机制（#11，Core typed event bus + HUD/panel refresh hook + LogicTests 覆盖）
 
 ## 阶段 4 — 表现力升级（核心增量）
-- [ ] 立绘/场景框架
+- [x] 立绘/场景框架（#12，Presentation 层 provider/placeholder + HUD 接入）
 - [ ] 关键动画与转场
 - [ ] 粒子特效
 - [ ] 音效 + BGM
