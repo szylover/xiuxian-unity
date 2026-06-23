@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Xiuxian.Core;
 using Xiuxian.Data;
+using Xiuxian.Systems;
 
 namespace Xiuxian.LogicTests
 {
@@ -73,6 +74,7 @@ namespace Xiuxian.LogicTests
 
             failures += ValidateIds(db);
             failures += ValidateDuplicateKeys(db);
+            failures += ValidateCoreCultivationSystems(db);
 
             if (failures == 0)
             {
@@ -159,6 +161,69 @@ namespace Xiuxian.LogicTests
             foreach (var kv in relevant)
                 Console.Error.WriteLine($"[FAIL] {kv.Key}: 注册 key 冲突 {kv.Value} 次");
             return relevant.Count;
+        }
+
+        private static int ValidateCoreCultivationSystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions
+            {
+                Name = "Test",
+                Gender = "male",
+                Appearance = 1,
+            }, new SystemRandomRng(1234));
+
+            var realm0 = db.Realms[0];
+            failures += Expect("player.start.realm", player.RealmIndex == 0);
+            failures += Expect("player.start.hp", player.MaxHp == (realm0.HpBase ?? 0) && player.Hp == player.MaxHp);
+            failures += Expect("player.start.atk", player.Atk == (realm0.AtkBase ?? 0));
+            failures += Expect("player.start.spiritRoots", player.SpiritRoots != null && player.SpiritRoots.Combo != null);
+
+            int expBefore = player.Exp;
+            var gain = CultivationSystem.GainCultivation(db, player);
+            failures += Expect("cultivation.gain", gain.ExpGain > 0 && gain.Player.Exp > expBefore);
+            var bodyGain = BodyCultivationSystem.GainBodyRealmExp(db, player, 100);
+            failures += Expect("bodyCultivation.gain", bodyGain.ActualGain > 0 && bodyGain.Player.BodyRealmExp > 0);
+
+            var successPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Success", Gender = "male", Appearance = 1 }, new SystemRandomRng(7));
+            successPlayer.Exp = db.Realms[1].ExpReq ?? 100;
+            var success = BreakthroughSystem.AttemptBreakthrough(db, successPlayer, new FixedRng(0.0));
+            failures += Expect("breakthrough.success.lowRoll", success.Success && success.Player.RealmIndex == 1);
+
+            var failPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Fail", Gender = "female", Appearance = 2 }, new SystemRandomRng(8));
+            failPlayer.Exp = db.Realms[1].ExpReq ?? 100;
+            var fail = BreakthroughSystem.AttemptBreakthrough(db, failPlayer, new FixedRng(0.999));
+            failures += Expect("breakthrough.fail.highRoll", !fail.Success && fail.Player.RealmIndex == 0 && fail.Player.Breakthrough.FailedAttempts.ContainsKey(0));
+
+            var bottleneckPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "BN", Gender = "male", Appearance = 1 }, new SystemRandomRng(9));
+            bottleneckPlayer.RealmIndex = 3;
+            var check = BottleneckSystem.CheckBottleneck(db, bottleneckPlayer, "realm", bottleneckPlayer.RealmIndex, null);
+            failures += Expect("bottleneck.check", check.Blocked && check.IsNewlyActivated);
+            BottleneckSystem.ActivateBottleneck(db, bottleneckPlayer, check.Def.Id);
+            failures += Expect("bottleneck.activate", bottleneckPlayer.Bottleneck.Active.ContainsKey(check.Def.Id));
+            BottleneckSystem.UnlockBottleneck(db, bottleneckPlayer, check.Def.Id, "persistence");
+            failures += Expect("bottleneck.unlock", bottleneckPlayer.Bottleneck.Unlocked.ContainsKey(check.Def.Id) && !bottleneckPlayer.Bottleneck.Active.ContainsKey(check.Def.Id));
+
+            var tribPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Trib", Gender = "female", Appearance = 1 }, new SystemRandomRng(10));
+            tribPlayer.RealmIndex = 5;
+            PlayerStatsSystem.RecalcStats(db, tribPlayer);
+            tribPlayer.Hp = tribPlayer.MaxHp;
+            var trib = TribulationSystem.RunTribulation(db, tribPlayer, new StubTribulationCombatResolver(), new FixedRng(0.5));
+            failures += Expect("tribulation.stub", trib.Success && trib.WavesCleared == trib.TotalWaves && trib.Player.RealmIndex == 6);
+
+            Console.WriteLine("[OK] 核心修炼系统校验完成");
+            return failures;
+        }
+
+        private static int Expect(string label, bool condition)
+        {
+            if (condition)
+            {
+                Console.WriteLine($"[OK] {label}");
+                return 0;
+            }
+            Console.Error.WriteLine($"[FAIL] {label}");
+            return 1;
         }
     }
 }

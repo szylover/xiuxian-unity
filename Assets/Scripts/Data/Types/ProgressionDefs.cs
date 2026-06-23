@@ -114,6 +114,7 @@ namespace Xiuxian.Data
         [JsonProperty("atLevel")] public int? AtLevel;
         [JsonProperty("hint")] public string Hint;
         [JsonProperty("unlockMethods")] public List<JToken> UnlockMethods;
+        [JsonProperty("overflowRatio")] public double? OverflowRatio;
         [JsonProperty("unlockBonus")] public JToken UnlockBonus;
         [JsonProperty("techniqueId")] public string TechniqueId;
     }
