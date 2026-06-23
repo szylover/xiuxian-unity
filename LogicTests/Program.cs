@@ -79,6 +79,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateCombatSystems(db);
             failures += ValidateEconomySystems(db);
             failures += ValidateWorldSocialSystems(db);
+            failures += ValidateAdvancedProgressionSystems(db);
 
             if (failures == 0)
             {
@@ -415,6 +416,69 @@ namespace Xiuxian.LogicTests
             failures += Expect("world.bounty.acceptCompleteReward", bountyAccept.Success && claim.Success && player.Gold >= goldBeforeBounty && BountySystem.GetBountyState(player).Completed.ContainsKey(bounty.Id));
 
             Console.WriteLine($"[OK] 世界社交摘要: event={ev.EventId}, questGold={player.Gold}, region={MapSystem.GetMapState(db, player).CurrentRegionId}, sectContribution={SectSystem.GetSectState(player).Contribution}, realmRuns={SecretRealmSystem.GetSecretRealmState(player).CompletedRuns.Count}, bountyRep={BountySystem.GetBountyState(player).Reputation}");
+            return failures;
+        }
+
+        private static int ValidateAdvancedProgressionSystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Progression", Gender = "female", Appearance = 2 }, new SystemRandomRng(41));
+            player.InventoryCapacity = 200;
+            PlayerStatsSystem.RecalcStats(db, player);
+            int atkBefore = player.Atk;
+            var destiny = DestinySystem.EnsureDestiny(player, new FixedRng(0.0));
+            failures += Expect("progression.destiny.passive", destiny.Success && player.DestinyId == "core:lone_star" && player.Atk > atkBefore && player.Passives.ContainsKey("progression.destiny"));
+
+            var insightGain = EnlightenmentSystem.GainComprehension(player, 120);
+            var insight = EnlightenmentSystem.ContemplateInsight(player);
+            failures += Expect("progression.enlightenment.insight", insightGain.Success && insight.Success && EnlightenmentSystem.GetState(player).UnlockedInsightIds.Count >= 1);
+
+            var karma = KarmaSystem.ChangeKarma(player, 45, "test", "major");
+            failures += Expect("progression.karma.band", karma.Alignment == "righteous" && karma.Title == "righteousCultivator" && KarmaSystem.GetState(player).MajorEvents.Contains("major"));
+
+            player.RealmIndex = 4; PlayerStatsSystem.RecalcStats(db, player); player.Hp = player.MaxHp; player.Mp = player.MaxMp; player.Stamina = player.MaxStamina;
+            HeartDemonSystem.AddHeartDemon(player, 95, "test");
+            var demon = HeartDemonSystem.TryHeartDemonTribulation(db, player, new FixedRng(0.1), true);
+            failures += Expect("progression.heartDemon.combat", demon.Triggered && demon.Logs.Count > 0 && (HeartDemonSystem.GetState(player).ConqueredCount + HeartDemonSystem.GetState(player).FailedCount) >= 1);
+
+            RankingSystem.Refresh(db, player, true);
+            var rank = RankingSystem.GetState(player).Snapshots["core:combat_power"];
+            failures += Expect("progression.ranking.sort", rank.Entries.Count > 1 && rank.Entries.SequenceEqual(rank.Entries.OrderBy(e => e.Rank)));
+
+            player.Age += 2; player.Hp = player.MaxHp; player.Mp = player.MaxMp; player.Stamina = player.MaxStamina;
+            var candidate = PvpSystem.GetCandidates(db, player).First();
+            var pvp = PvpSystem.Challenge(db, player, candidate.Id, new FixedRng(0.1));
+            failures += Expect("progression.pvp.resolves", pvp.CombatResult != null && !string.IsNullOrEmpty(pvp.CombatResult.Winner) && PvpSystem.GetState(player).Records.Count == 1);
+
+            var old = player;
+            old.RealmIndex = 7; InventorySystem.AddItem(db, old, ReincarnationSystem.ReincarnationOrbId, 1);
+            var reinc = ReincarnationSystem.Perform(db, old, "voluntary", new SystemRandomRng(42));
+            failures += Expect("progression.reincarnation.carry", reinc.NewPlayer != old && ReincarnationSystem.GetState(reinc.NewPlayer).Count == 1 && reinc.NewPlayer.DestinyId == old.DestinyId);
+
+            var ascBlocked = AscensionSystem.GetStatus(db, player);
+            player.RealmIndex = 7; player.Exp = 500000; player.Tracking.DefeatedHigherRealm = true; InventorySystem.AddItem(db, player, "cp-03:ascension_token", 1); InventorySystem.AddItem(db, player, "cp-03:immortal_dew", 2);
+            var ascReady = AscensionSystem.GetStatus(db, player);
+            var ascDone = AscensionSystem.ApplySuccess(db, player, ascReady.AscDef);
+            failures += Expect("progression.ascension.blockReadyDone", !ascBlocked.CanAscend && ascReady.CanAscend && ascDone.Success && AscensionSystem.GetState(player).HasAscended);
+
+            player.RealmIndex = 15; player.Exp = 520000000; player.Karma = 0; InventorySystem.AddItem(db, player, "cp-04:primordial_jade", 3);
+            var endgame = PrimordialEndgameSystem.Attempt(db, player, new FixedRng(0.1), true);
+            failures += Expect("progression.endgame.complete", endgame.Completed && PrimordialEndgameSystem.GetState(player).CompletedId != null);
+
+            InventorySystem.AddItem(db, player, "core:scroll_technique_basic_sword", 1);
+            var studyStart = LearningSystem.StartStudy(db, player, "core:scroll_technique_basic_sword");
+            var studyTick = LearningSystem.TickStudy(db, player, 99);
+            failures += Expect("progression.learning.technique", studyStart.Success && studyTick.Completed && player.Techniques.Any(t => t.TechniqueId == studyStart.Message));
+
+            player.Tracking.KillCount = 1;
+            var ach = AchievementSystem.CheckAchievements(player);
+            failures += Expect("progression.achievement.unlock", ach.Success && AchievementSystem.GetState(player).UnlockedIds.Contains("core:first_blood"));
+
+            var chronicle = ChronicleSystem.CreateIncarnation(db, player, ChronicleSystem.Empty());
+            ChronicleSystem.AddEvent(chronicle, new ChronicleEvent { Type = "achievement_unlocked", Year = player.GameYear, Month = player.GameMonth, Description = "test" });
+            failures += Expect("progression.chronicle.entry", chronicle.Current != null && chronicle.Current.Events.Count == 1);
+
+            Console.WriteLine($"[OK] 进阶机制摘要: destiny={player.DestinyId}, insight={EnlightenmentSystem.GetState(player).UnlockedInsightIds.Count}, karma={player.Karma}/{karma.Alignment}, heartDemon={HeartDemonSystem.GetState(player).Value}, rank={rank.PlayerRank}, pvp={pvp.CombatResult.Winner}, reinc={ReincarnationSystem.GetState(reinc.NewPlayer).Count}, ascended={AscensionSystem.GetState(player).HasAscended}, endgame={PrimordialEndgameSystem.GetState(player).CompletedId}, techniques={player.Techniques.Count}, achievements={AchievementSystem.GetState(player).UnlockedIds.Count}, chronicleEvents={chronicle.Current.Events.Count}");
             return failures;
         }
 
