@@ -22,7 +22,7 @@
 - [x] 存档/读档（#8，多槽位 JSON 存档 + UnityEngine-free SaveSystem）
 
 ## 阶段 3 — uGUI 表现层
-- [ ] 主场景 + 启动/角色创建/DLC 选择 + HUD + 面板容器/导航
+- [x] 主场景 + 启动/角色创建/DLC 选择 + HUD + 面板容器/导航（#9，运行时 uGUI shell + Main.unity bootstrap）
 - [ ] 复刻 27 个面板（功能对齐网页版）
 - [ ] 状态→UI 事件刷新机制
 
