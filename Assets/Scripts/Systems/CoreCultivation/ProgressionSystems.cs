@@ -20,26 +20,6 @@ namespace Xiuxian.Systems
         public const double BreakthroughFailExpLoss = 0.1;
     }
 
-    public static class InventorySystem
-    {
-        public static int CountItem(Player p, string itemId) => p.Inventory.FirstOrDefault(x => x.ItemId == itemId)?.Count ?? 0;
-        public static void AddItem(Player p, string itemId, int count)
-        {
-            if (count <= 0) return;
-            var slot = p.Inventory.FirstOrDefault(x => x.ItemId == itemId);
-            if (slot == null) p.Inventory.Add(new InventorySlot { ItemId = itemId, Count = count });
-            else slot.Count += count;
-        }
-        public static bool RemoveItem(Player p, string itemId, int count)
-        {
-            var slot = p.Inventory.FirstOrDefault(x => x.ItemId == itemId);
-            if (slot == null || slot.Count < count) return false;
-            slot.Count -= count;
-            if (slot.Count <= 0) p.Inventory.Remove(slot);
-            return true;
-        }
-    }
-
     public static class PlayerStatsSystem
     {
         public static SpiritRootGrade GetSpiritRootGrade(Aptitudes a)
