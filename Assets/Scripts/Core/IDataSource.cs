@@ -15,6 +15,9 @@ namespace Xiuxian.Core
         /// <summary>列出 dlc/ 下的包目录名（如 core、cp-02-goudao）。</summary>
         IEnumerable<string> ListPackages();
 
+        /// <summary>列出某包子目录下的文件名（如 dialogues/*.json）。</summary>
+        IEnumerable<string> ListFiles(string package, string subfolder);
+
         /// <summary>判断某包下的某文件是否存在（相对 dlc/&lt;pkg&gt;/）。</summary>
         bool Exists(string package, string fileName);
 
@@ -37,6 +40,14 @@ namespace Xiuxian.Core
             if (!Directory.Exists(_dlcRoot)) yield break;
             foreach (var dir in Directory.GetDirectories(_dlcRoot))
                 yield return Path.GetFileName(dir);
+        }
+
+        public IEnumerable<string> ListFiles(string package, string subfolder)
+        {
+            var dir = Path.Combine(_dlcRoot, package, subfolder);
+            if (!Directory.Exists(dir)) yield break;
+            foreach (var file in Directory.GetFiles(dir, "*.json"))
+                yield return Path.GetFileName(file);
         }
 
         public bool Exists(string package, string fileName)
