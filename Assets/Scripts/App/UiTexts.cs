@@ -198,6 +198,95 @@ namespace Xiuxian.App
         public const string LogItemUsed = "物品已使用。";
         public const string LogItemDropped = "物品已丢弃。";
         public const string OperationFailed = "操作未生效。";
+        public const string NoAvailableRecipes = "暂无可用配方。";
+        public const string NoAvailableSmithingRecipes = "暂无可用炼器配方。";
+        public const string LearnedRecipeHint = "可在学习面板研读丹方或图谱来解锁更多配方。";
+        public const string RecipeList = "配方列表";
+        public const string SmithingRecipeList = "炼器图谱";
+        public const string Materials = "材料";
+        public const string Output = "产物";
+        public const string SuccessRate = "成功率";
+        public const string MentalCost = "念力消耗";
+        public const string GoldCost = "灵石消耗";
+        public const string BrewAlchemy = "开炉炼丹";
+        public const string ForgeSmithing = "开炉炼器";
+        public const string Buy = "买入";
+        public const string Sell = "卖出";
+        public const string ShopBuyList = "商店货架";
+        public const string ShopSellList = "背包可售";
+        public const string MerchantAbsent = "商人还没到。";
+        public const string EmptyBagShort = "背包空空。";
+        public const string UnitPrice = "单价";
+        public const string OriginalPrice = "原价";
+        public const string SellPrice = "卖价";
+        public const string Stock = "库存";
+        public const string AuctionIntro = "竞拍珍宝或寄售物品，拍卖会每隔数月刷新。";
+        public const string AuctionLots = "当前拍品";
+        public const string AuctionConsignments = "寄售中";
+        public const string AuctionHistory = "拍卖记录";
+        public const string EmptyAuctionLots = "暂无拍品。";
+        public const string EmptyAuctionConsignments = "暂无寄售。";
+        public const string EmptyAuctionHistory = "暂无记录。";
+        public const string RefreshAuction = "刷新拍卖";
+        public const string SettleAuction = "结算拍卖";
+        public const string Bid = "出价";
+        public const string Consign = "寄售";
+        public const string BasePrice = "底价";
+        public const string CurrentBid = "当前价";
+        public const string HighestBidder = "最高出价";
+        public const string TimeLeft = "剩余";
+        public const string AskPrice = "标价";
+        public const string PlayerBidder = "你";
+        public const string NoBidder = "无人";
+        public const string MiningIntro = "寻访灵脉，消耗精力与时间采集矿材。";
+        public const string MiningSummary = "采矿总览";
+        public const string AvailableMiningSites = "可采矿脉";
+        public const string EmptyMiningSites = "当前区域暂无可采矿脉。";
+        public const string Mine = "采矿";
+        public const string FengShui = "风水";
+        public const string MinRealm = "最低境界";
+        public const string Cost = "消耗";
+        public const string LastMiningSite = "上次矿脉";
+        public const string CurrentRegion = "当前位置";
+        public const string WorldRegions = "世界区域";
+        public const string Travel = "前往";
+        public const string Here = "您在这里";
+        public const string SafeZone = "安全区";
+        public const string LockedReason = "未解锁";
+        public const string RegionTags = "区域标签";
+        public const string ActiveQuests = "进行中";
+        public const string DiscoveredQuests = "已发现";
+        public const string CompletedQuests = "已完成";
+        public const string TrackedQuest = "追踪任务";
+        public const string NoActiveQuests = "暂无进行中的任务。";
+        public const string NoDiscoveredQuests = "暂无新任务。";
+        public const string NoCompletedQuests = "尚未完成任务。";
+        public const string AcceptQuest = "接受";
+        public const string TrackQuest = "追踪";
+        public const string UntrackQuest = "取消追踪";
+        public const string DeliverItem = "交付";
+        public const string TurnInQuest = "领取奖励";
+        public const string PendingTurnIn = "待交付";
+        public const string Objectives = "目标";
+        public const string Rewards = "奖励";
+        public const string Step = "阶段";
+        public const string CompletedAt = "完成时间";
+        public const string RegionNpcs = "当前区域";
+        public const string Contacts = "人脉总览";
+        public const string NoRegionNpcs = "当前区域无 NPC。";
+        public const string NoContacts = "尚未邂逅任何人。";
+        public const string MeetNpc = "邂逅";
+        public const string ChatNpc = "攀谈";
+        public const string GiftNpc = "赠礼";
+        public const string Relation = "关系";
+        public const string Affinity = "好感";
+        public const string Role = "身份";
+        public const string Personality = "性情";
+        public const string Disposition = "立场";
+        public const string HomeRegion = "故乡";
+        public const string QuestsAtNpc = "相关任务";
+        public const string Available = "可接";
+        public const string CanTurnIn = "可交付";
 
         public static string SlotTitle(int slot) => $"{Slot} {slot}";
         public static string SlotPreview(SaveSlotPreview p) => p == null || p.IsEmpty ? EmptySlot : $"{p.Name}｜第{p.GameYear}年{p.GameMonth}月｜境界 {p.RealmIndex}";
@@ -234,6 +323,63 @@ namespace Xiuxian.App
         public static string ActiveName(string name) => $"{Active}：{name}";
         public static string CultivateGain(int gain) => $"修为 +{gain}";
         public static string BodyGain(int gain) => $"体修修为 +{gain}";
+        public static string RecipeOutput(string name, int count) => $"→ {name} ×{count}";
+        public static string ItemCount(string name, int count) => $"{name} ×{count}";
+        public static string HaveNeed(int have, int need) => $"{have}/{need}";
+        public static string TimeLeftMonths(int months) => $"{TimeLeft} {months} 月";
+        public static string TravelCost(int stamina, int months) => $"{stamina} 精力 / {months} 月";
+        public static string MiningTotal(int count, int fengShui) => $"已采 {count} 次，累计风水 {fengShui}";
+        public static string SectionCountLabel(string label, int count) => $"{label}（{count}）";
+        public static string QuestPendingTurnIn(string npcName) => $"请前往 {npcName} 交付任务。";
+        public static string CompletedAtMonths(int months) => $"第 {months / 12 + 1} 年 {months % 12 + 1} 月";
+        public static string RegionMinRealm(string qi, string body) => string.IsNullOrEmpty(body) ? $"需 {qi}" : $"需 {qi} / {body}";
+        public static string LogOperation(string panel, string message) => $"{panel}：{message}";
+        public static string RelationName(string level) => level switch { "hostile" => "敌对", "cold" => "冷淡", "stranger" => "陌生", "acquaintance" => "相识", "friend" => "好友", "close_friend" => "挚友", "soulmate" => "知己", _ => level ?? Unknown };
+        public static string FengShuiGrade(string grade) => grade switch { "excellent" => "极佳", "good" => "上佳", "normal" => "平稳", "poor" => "贫瘠", "bad" => "凶煞", _ => grade ?? Unknown };
+        public static string WorldActionMessage(string key) => key switch
+        {
+            "regionNotFound" => "区域不存在",
+            "containerRegion" => "此处为区域分类，无法直接前往",
+            "alreadyHere" => "已在此地",
+            "realmInsufficient" => "境界不足",
+            "staminaInsufficient" => "精力不足",
+            "arrived" => "已抵达",
+            "npcNotFound" => "未找到此人",
+            "alreadyMet" => "已经邂逅",
+            "met" => "初次邂逅",
+            "affinityChanged" => "好感变化",
+            "gift" => "赠礼完成",
+            "notMet" => "尚未邂逅",
+            "giftCooldown" => "赠礼尚在冷却",
+            "itemMissing" => "物品不足",
+            _ => key ?? OperationFailed,
+        };
+        public static string AuctionLog(string key) => key switch
+        {
+            "refreshed" => "拍卖会已刷新",
+            "playerBid" => "你参与竞拍",
+            "aiOutbid" => "他人加价超过了你",
+            "playerLeading" => "你暂时领先",
+            "consigned" => "物品已寄售",
+            "winLot" => "拍品已成交并收入背包",
+            "refundBid" => "竞拍未中，押金已退回",
+            "consignmentSold" => "寄售成交",
+            "consignmentReturned" => "寄售流拍，物品退回",
+            _ => WorldActionMessage(key),
+        };
+        public static string QuestLog(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return OperationFailed;
+            if (key.StartsWith("accepted:", StringComparison.Ordinal)) return $"已接受任务 {key.Substring("accepted:".Length)}";
+            if (key.StartsWith("discovered:", StringComparison.Ordinal)) return $"发现任务 {key.Substring("discovered:".Length)}";
+            if (key.StartsWith("delivered:", StringComparison.Ordinal)) return $"已交付 {key.Substring("delivered:".Length)}";
+            if (key.StartsWith("completed:", StringComparison.Ordinal)) return $"已完成任务 {key.Substring("completed:".Length)}";
+            if (key.StartsWith("exp+", StringComparison.Ordinal)) return $"{Cultivation} +{key.Substring("exp+".Length)}";
+            if (key.StartsWith("gold+", StringComparison.Ordinal)) return $"{Gold} +{key.Substring("gold+".Length)}";
+            if (key.StartsWith("item:", StringComparison.Ordinal)) return $"获得物品 {key.Substring("item:".Length)}";
+            if (key.StartsWith("karma", StringComparison.Ordinal)) return $"{Karma} {key.Substring("karma".Length)}";
+            return key;
+        }
         public static string BreakthroughTarget(string name, double rate) => $"突破至 {name}（{Percent(rate * 100)}）";
         public static string BodyBreakthroughTarget(string name) => $"体修突破至 {name}";
         public static string StatBonus(string label, object value) => $"{label}+{value}";

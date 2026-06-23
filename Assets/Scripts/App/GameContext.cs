@@ -329,6 +329,183 @@ namespace Xiuxian.App
             PublishPlayerChanges(GameEventType.TechniquesChanged, GameEventType.DivineArtsChanged);
         }
 
+        public void BrewAlchemy(string recipeId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = AlchemySystem.PerformAlchemy(Database, CurrentPlayer, recipeId, rng);
+            CurrentPlayer = result.Player;
+            if (result.Success && Database.Recipes.TryGetValue(recipeId, out var recipe))
+                QuestSystem.TickQuestObjectives(Database, CurrentPlayer, new QuestTrigger { Type = "craft_item", RecipeId = recipeId, OutputItemId = recipe.OutputItemId });
+            AddLog(UiTexts.LogOperation(UiTexts.Alchemy, result.Message ?? UiTexts.OperationFailed));
+            PublishPlayerChanges(GameEventType.AlchemyChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.QuestChanged);
+        }
+
+        public void ForgeSmithing(string recipeId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = SmithingSystem.PerformSmithing(Database, CurrentPlayer, recipeId, rng);
+            CurrentPlayer = result.Player;
+            if (result.Success && Database.SmithingRecipes.TryGetValue(recipeId, out var recipe))
+                QuestSystem.TickQuestObjectives(Database, CurrentPlayer, new QuestTrigger { Type = "craft_item", RecipeId = recipeId, OutputItemId = recipe.OutputItemId });
+            AddLog(UiTexts.LogOperation(UiTexts.Smithing, result.Message ?? UiTexts.OperationFailed));
+            PublishPlayerChanges(GameEventType.SmithingChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged, GameEventType.PlayerStatsChanged, GameEventType.QuestChanged);
+        }
+
+        public void BuyShopItem(string itemId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = ShopSystem.BuyItem(Database, CurrentPlayer, itemId, 1);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Shop, result.Message ?? UiTexts.OperationFailed));
+            PublishPlayerChanges(GameEventType.ShopChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void SellShopItem(string itemId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = ShopSystem.SellItem(Database, CurrentPlayer, itemId, 1);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Shop, result.Message ?? UiTexts.OperationFailed));
+            PublishPlayerChanges(GameEventType.ShopChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void EnsureAuctionHouse()
+        {
+            if (CurrentPlayer == null) return;
+            var result = AuctionSystem.EnsureAuctionHouse(Database, CurrentPlayer, rng);
+            CurrentPlayer = result.Player;
+            if (result.Logs.Count == 0) return;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Auction, UiTexts.AuctionLog(log)));
+            PublishPlayerChanges(GameEventType.AuctionChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void RefreshAuctionHouse()
+        {
+            if (CurrentPlayer == null) return;
+            var result = AuctionSystem.RefreshAuctionHouse(Database, CurrentPlayer, rng);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Auction, UiTexts.AuctionLog(log)));
+            PublishPlayerChanges(GameEventType.AuctionChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void BidAuctionLot(string lotId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = AuctionSystem.PlaceAuctionBid(Database, CurrentPlayer, lotId, rng);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Auction, UiTexts.AuctionLog(log)));
+            PublishPlayerChanges(GameEventType.AuctionChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void SettleAuctionHouse()
+        {
+            if (CurrentPlayer == null) return;
+            var result = AuctionSystem.SettleDueAuctions(Database, CurrentPlayer, rng, true);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Auction, UiTexts.AuctionLog(log)));
+            PublishPlayerChanges(GameEventType.AuctionChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void ConsignAuctionItem(string itemId, int count, int askPrice)
+        {
+            if (CurrentPlayer == null) return;
+            var result = AuctionSystem.ConsignAuctionItem(Database, CurrentPlayer, itemId, count, askPrice, rng);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Auction, UiTexts.AuctionLog(log)));
+            PublishPlayerChanges(GameEventType.AuctionChanged, GameEventType.InventoryChanged);
+        }
+
+        public void MineSite(string siteId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = MiningSystem.PerformMining(Database, CurrentPlayer, siteId, rng);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Mining, log));
+            Publish(GameEventType.TimeAdvanced, CurrentPlayer);
+            PublishPlayerChanges(GameEventType.MiningChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.QuestChanged);
+        }
+
+        public void TravelToRegion(string regionId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = MapSystem.TravelTo(Database, CurrentPlayer, regionId);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Map, UiTexts.WorldActionMessage(result.Message)));
+            if (result.Success)
+            {
+                QuestSystem.CheckQuestDiscovery(Database, CurrentPlayer, new QuestTrigger { Type = "reach_region", RegionId = regionId }, rng);
+                QuestSystem.TickQuestObjectives(Database, CurrentPlayer, new QuestTrigger { Type = "reach_region", RegionId = regionId });
+            }
+            Publish(GameEventType.TimeAdvanced, CurrentPlayer);
+            PublishPlayerChanges(GameEventType.MapChanged, GameEventType.RegionChanged, GameEventType.PlayerStatsChanged, GameEventType.QuestChanged, GameEventType.ShopChanged, GameEventType.MiningChanged, GameEventType.NpcChanged);
+        }
+
+        public void AcceptQuest(string questId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = QuestSystem.AcceptQuest(Database, CurrentPlayer, questId);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Quest, UiTexts.QuestLog(log)));
+            PublishPlayerChanges(GameEventType.QuestChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void DeliverQuestItem(string questId, int objectiveIndex)
+        {
+            if (CurrentPlayer == null) return;
+            var result = QuestSystem.DeliverQuestItem(Database, CurrentPlayer, questId, objectiveIndex);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Quest, UiTexts.QuestLog(log)));
+            PublishPlayerChanges(GameEventType.QuestChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void TurnInQuest(string questId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = QuestSystem.TurnInQuest(Database, CurrentPlayer, questId);
+            CurrentPlayer = result.Player;
+            foreach (var log in result.Logs) AddLog(UiTexts.LogOperation(UiTexts.Quest, UiTexts.QuestLog(log)));
+            PublishPlayerChanges(GameEventType.QuestChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void TrackQuest(string questId)
+        {
+            if (CurrentPlayer == null) return;
+            var state = QuestSystem.GetQuestState(CurrentPlayer);
+            state.TrackedQuestId = state.TrackedQuestId == questId ? null : questId;
+            PublishPlayerChanges(GameEventType.QuestChanged);
+        }
+
+        public void MeetNpc(string npcId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = NpcSystem.MeetNpc(Database, CurrentPlayer, npcId);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Npc, UiTexts.WorldActionMessage(result.Message)));
+            QuestSystem.CheckQuestDiscovery(Database, CurrentPlayer, new QuestTrigger { Type = "talk_npc", NpcId = npcId }, rng);
+            QuestSystem.TickQuestObjectives(Database, CurrentPlayer, new QuestTrigger { Type = "talk_npc", NpcId = npcId });
+            PublishPlayerChanges(GameEventType.NpcChanged, GameEventType.QuestChanged);
+        }
+
+        public void ChatNpc(string npcId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = NpcSystem.ChangeAffinity(Database, CurrentPlayer, npcId, 1);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Npc, UiTexts.WorldActionMessage(result.Message)));
+            QuestSystem.CheckQuestDiscovery(Database, CurrentPlayer, new QuestTrigger { Type = "talk_npc", NpcId = npcId }, rng);
+            QuestSystem.TickQuestObjectives(Database, CurrentPlayer, new QuestTrigger { Type = "talk_npc", NpcId = npcId });
+            PublishPlayerChanges(GameEventType.NpcChanged, GameEventType.QuestChanged);
+        }
+
+        public void GiveNpcGift(string npcId, string itemId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = NpcSystem.GiveGift(Database, CurrentPlayer, npcId, itemId, rng);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Npc, UiTexts.WorldActionMessage(result.Message)));
+            PublishPlayerChanges(GameEventType.NpcChanged, GameEventType.InventoryChanged);
+        }
+
         private void AdvanceTime(int months)
         {
             if (CurrentPlayer == null || months <= 0) return;

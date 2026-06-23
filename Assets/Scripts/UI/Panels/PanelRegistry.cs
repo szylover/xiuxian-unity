@@ -33,13 +33,12 @@ namespace Xiuxian.UI
                 }),
                 new PanelCategory(UiTexts.NavCategoryEconomy, new IPanel[]
                 {
-                    new InventoryPanel(), Placeholder(PanelId.Alchemy, UiTexts.Alchemy), Placeholder(PanelId.Smithing, UiTexts.Smithing),
-                    Placeholder(PanelId.Crafting, UiTexts.Crafting), Placeholder(PanelId.Shop, UiTexts.Shop),
-                    Placeholder(PanelId.Auction, UiTexts.Auction), Placeholder(PanelId.Mining, UiTexts.Mining),
+                    new InventoryPanel(), new AlchemyPanel(), new SmithingPanel(), new CraftingPanel(), new ShopPanel(),
+                    new AuctionPanel(), new MiningPanel(),
                 }),
                 new PanelCategory(UiTexts.NavCategoryWorld, new IPanel[]
                 {
-                    Placeholder(PanelId.Map, UiTexts.Map), Placeholder(PanelId.Quest, UiTexts.Quest), Placeholder(PanelId.Npc, UiTexts.Npc),
+                    new MapPanel(), new QuestPanel(), new NpcPanel(),
                     Placeholder(PanelId.Sect, UiTexts.Sect), Placeholder(PanelId.SecretRealm, UiTexts.SecretRealm),
                     Placeholder(PanelId.Bounty, UiTexts.Bounty), Placeholder(PanelId.Companion, UiTexts.Companion),
                 }),
