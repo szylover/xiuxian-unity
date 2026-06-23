@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Xiuxian.Presentation.Audio;
 
 namespace Xiuxian.UI
 {
@@ -47,12 +48,16 @@ namespace Xiuxian.UI
             return label;
         }
 
-        public static Button Button(Transform parent, string text, Action onClick)
+        public static Button Button(Transform parent, string text, Action onClick, bool playClickSound = true)
         {
             var go = Panel(parent, "Button", new Color(0.28f, 0.20f, 0.11f, 0.95f));
             var button = go.AddComponent<Button>();
             button.targetGraphic = go.GetComponent<Image>();
-            button.onClick.AddListener(() => onClick?.Invoke());
+            button.onClick.AddListener(() =>
+            {
+                if (playClickSound) AudioManager.PlayButtonClickGlobal();
+                onClick?.Invoke();
+            });
             var label = Label(go.transform, text, 24);
             Stretch(label.rectTransform, 8, 4, 8, 4);
             return button;
