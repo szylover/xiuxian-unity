@@ -506,6 +506,165 @@ namespace Xiuxian.App
             PublishPlayerChanges(GameEventType.NpcChanged, GameEventType.InventoryChanged);
         }
 
+        public void JoinSect(string sectId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = SectSystem.JoinSect(Database, CurrentPlayer, sectId);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.Sect, result.Logs, UiTexts.WorldSystemLog);
+            PublishPlayerChanges(GameEventType.SectChanged, GameEventType.CurrencyChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public void ClaimSectStipend()
+        {
+            if (CurrentPlayer == null) return;
+            var result = SectSystem.ClaimSectStipend(Database, CurrentPlayer);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Sect, result.Success ? UiTexts.SectStipendClaimed : UiTexts.OperationFailed));
+            PublishPlayerChanges(GameEventType.SectChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void CompleteSectMission(string missionId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = SectSystem.CompleteSectMission(Database, CurrentPlayer, missionId);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.Sect, result.Logs, UiTexts.WorldSystemLog);
+            PublishPlayerChanges(GameEventType.SectChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public void StartSecretRealm(string realmId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = SecretRealmSystem.StartSecretRealm(Database, CurrentPlayer, realmId);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.SecretRealm, result.Logs, UiTexts.SecretRealmLog);
+            PublishPlayerChanges(GameEventType.SecretRealmChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public void AdvanceSecretRealm()
+        {
+            if (CurrentPlayer == null) return;
+            var result = SecretRealmSystem.AdvanceSecretRealm(Database, CurrentPlayer, rng);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.SecretRealm, result.Logs, UiTexts.SecretRealmLog);
+            PublishPlayerChanges(GameEventType.SecretRealmChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.CombatChanged);
+        }
+
+        public void FinishSecretRealm()
+        {
+            if (CurrentPlayer == null) return;
+            var result = SecretRealmSystem.FinishSecretRealm(Database, CurrentPlayer);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.SecretRealm, result.Logs, UiTexts.WorldSystemLog);
+            PublishPlayerChanges(GameEventType.SecretRealmChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public void RefreshBounties()
+        {
+            if (CurrentPlayer == null) return;
+            var result = BountySystem.RefreshBountyBoard(Database, CurrentPlayer, rng);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Bounty, result.Success ? UiTexts.BountyRefreshed : UiTexts.OperationFailed));
+            PublishPlayerChanges(GameEventType.BountyChanged);
+        }
+
+        public void EnsureBountyBoard()
+        {
+            if (CurrentPlayer == null) return;
+            CurrentPlayer = BountySystem.EnsureBountyBoard(Database, CurrentPlayer, rng);
+        }
+
+        public void AcceptBounty(string bountyId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = BountySystem.AcceptBounty(Database, CurrentPlayer, bountyId, rng);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.Bounty, result.Logs, UiTexts.BountyLog);
+            PublishPlayerChanges(GameEventType.BountyChanged);
+        }
+
+        public void ClaimBounty(string bountyId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = BountySystem.ClaimBounty(Database, CurrentPlayer, bountyId);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.Bounty, result.Logs, UiTexts.WorldSystemLog);
+            PublishPlayerChanges(GameEventType.BountyChanged, GameEventType.InventoryChanged, GameEventType.CurrencyChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public void CheckAchievements()
+        {
+            if (CurrentPlayer == null) return;
+            var result = AchievementSystem.CheckAchievements(CurrentPlayer);
+            CurrentPlayer = result.Player;
+            if (result.Success) AddLog(UiTexts.LogOperation(UiTexts.Achievement, UiTexts.AchievementUnlocked(result.Message)));
+            PublishPlayerChanges(GameEventType.AchievementChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public CultivationChronicle EnsureChronicle()
+        {
+            if (CurrentPlayer == null) return null;
+            if (!CurrentPlayer.Systems.TryGetValue("chronicle", out var stored) || stored is not CultivationChronicle chronicle)
+            {
+                chronicle = ChronicleSystem.CreateIncarnation(Database, CurrentPlayer, ChronicleSystem.Empty());
+                CurrentPlayer.Systems["chronicle"] = chronicle;
+            }
+            ChronicleSystem.UpdateCurrentSnapshot(Database, chronicle, CurrentPlayer);
+            return chronicle;
+        }
+
+        public void RefreshRanking()
+        {
+            if (CurrentPlayer == null) return;
+            CurrentPlayer = RankingSystem.Refresh(Database, CurrentPlayer, true);
+            AddLog(UiTexts.LogOperation(UiTexts.Ranking, UiTexts.RankingRefreshed));
+            PublishPlayerChanges(GameEventType.RankingChanged);
+        }
+
+        public void ChallengePvp(string opponentId)
+        {
+            if (CurrentPlayer == null) return;
+            var result = PvpSystem.Challenge(Database, CurrentPlayer, opponentId, rng);
+            CurrentPlayer = result.Player;
+            AddLog(UiTexts.LogOperation(UiTexts.Pvp, UiTexts.PvpResult(result.Message)));
+            PublishPlayerChanges(GameEventType.PvpChanged, GameEventType.RankingChanged, GameEventType.PlayerStatsChanged, GameEventType.CurrencyChanged);
+        }
+
+        public void SuppressHeartDemon()
+        {
+            if (CurrentPlayer == null) return;
+            var state = HeartDemonSystem.GetState(CurrentPlayer);
+            if (state.SuppressedUntilAge.HasValue && CurrentPlayer.Age < state.SuppressedUntilAge.Value)
+            {
+                AddLog(UiTexts.LogOperation(UiTexts.HeartDemon, UiTexts.HeartDemonSuppressed));
+                return;
+            }
+            if (CurrentPlayer.MentalPower < UiTexts.HeartDemonSuppressCostValue)
+            {
+                AddLog(UiTexts.LogOperation(UiTexts.HeartDemon, UiTexts.NeedMoreMentalPower));
+                return;
+            }
+            var amount = System.Math.Min(state.Value, 14 + CurrentPlayer.Comprehension / 12 + EnlightenmentSystem.GetState(CurrentPlayer).InsightPoints * 2);
+            CurrentPlayer.MentalPower -= UiTexts.HeartDemonSuppressCostValue;
+            CurrentPlayer.Mood = System.Math.Min(100, CurrentPlayer.Mood + 4);
+            state.Value = System.Math.Max(0, state.Value - amount);
+            state.SuppressedUntilAge = CurrentPlayer.Age + 3;
+            state.History.Insert(0, new HeartDemonHistory { Age = CurrentPlayer.Age, Source = "suppress", Outcome = "suppress", Value = state.Value });
+            AddLog(UiTexts.LogOperation(UiTexts.HeartDemon, UiTexts.HeartDemonSuppressResult(amount, state.Value)));
+            PublishPlayerChanges(GameEventType.HeartDemonChanged, GameEventType.PlayerStatsChanged);
+        }
+
+        public void ConfrontHeartDemon()
+        {
+            if (CurrentPlayer == null) return;
+            var result = HeartDemonSystem.TryHeartDemonTribulation(Database, CurrentPlayer, rng, true);
+            CurrentPlayer = result.Player;
+            AddSystemLogs(UiTexts.HeartDemon, result.Logs, line => line);
+            AddLog(UiTexts.LogOperation(UiTexts.HeartDemon, UiTexts.HeartDemonBattleResult(result.Message)));
+            PublishPlayerChanges(GameEventType.HeartDemonChanged, GameEventType.EnlightenmentChanged, GameEventType.PlayerStatsChanged, GameEventType.CombatChanged);
+        }
+
         private void AdvanceTime(int months)
         {
             if (CurrentPlayer == null || months <= 0) return;
@@ -541,6 +700,17 @@ namespace Xiuxian.App
 
         private static int ClampInt(double value, int min, int max)
             => System.Math.Max(min, System.Math.Min(max, (int)System.Math.Round(value)));
+
+        private void AddSystemLogs(string panel, IEnumerable<string> logs, Func<string, string> formatter)
+        {
+            var any = false;
+            foreach (var log in logs ?? Array.Empty<string>())
+            {
+                any = true;
+                AddLog(UiTexts.LogOperation(panel, formatter == null ? log : formatter(log)));
+            }
+            if (!any) AddLog(UiTexts.LogOperation(panel, UiTexts.OperationFailed));
+        }
 
         private static string PackageSortKey(string id)
             => id == "core" ? string.Empty : id ?? string.Empty;

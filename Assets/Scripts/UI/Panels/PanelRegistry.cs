@@ -39,14 +39,11 @@ namespace Xiuxian.UI
                 new PanelCategory(UiTexts.NavCategoryWorld, new IPanel[]
                 {
                     new MapPanel(), new QuestPanel(), new NpcPanel(),
-                    Placeholder(PanelId.Sect, UiTexts.Sect), Placeholder(PanelId.SecretRealm, UiTexts.SecretRealm),
-                    Placeholder(PanelId.Bounty, UiTexts.Bounty), Placeholder(PanelId.Companion, UiTexts.Companion),
+                    new SectPanel(), new SecretRealmPanel(), new BountyPanel(), new CompanionPanel(),
                 }),
                 new PanelCategory(UiTexts.NavCategoryAdvanced, new IPanel[]
                 {
-                    Placeholder(PanelId.Achievement, UiTexts.Achievement), Placeholder(PanelId.Chronicle, UiTexts.Chronicle),
-                    Placeholder(PanelId.Ranking, UiTexts.Ranking), Placeholder(PanelId.Pvp, UiTexts.Pvp),
-                    Placeholder(PanelId.HeartDemon, UiTexts.HeartDemon),
+                    new AchievementPanel(), new ChroniclePanel(), new RankingPanel(), new PvpPanel(), new HeartDemonPanel(),
                 }),
                 new PanelCategory(UiTexts.NavCategorySystem, new IPanel[] { new SavePanel() }),
             };
@@ -54,6 +51,5 @@ namespace Xiuxian.UI
 
         public static IReadOnlyList<IPanel> GetPanels() => GetCategories().SelectMany(c => c.Panels).ToArray();
 
-        private static IPanel Placeholder(PanelId id, string title) => new PlaceholderPanel(id, title);
     }
 }
