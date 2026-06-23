@@ -82,6 +82,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateWorldSocialSystems(db);
             failures += ValidateAdvancedProgressionSystems(db);
             failures += ValidateProceduralSystems(db);
+            failures += ValidateSaveLoadSystems(db);
 
             if (failures == 0)
             {
@@ -548,6 +549,95 @@ namespace Xiuxian.LogicTests
 
         private static bool SameJson(object a, object b) =>
             Newtonsoft.Json.JsonConvert.SerializeObject(a) == Newtonsoft.Json.JsonConvert.SerializeObject(b);
+
+        private static int ValidateSaveLoadSystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions
+            {
+                Name = "SaveHero",
+                Gender = "female",
+                Appearance = 2,
+            }, new SystemRandomRng(61));
+            player.Gold = 1000;
+            player.RealmIndex = 2;
+            player.Age = 245;
+            player.GameYear = 5;
+            player.GameMonth = 6;
+            player.InventoryCapacity = 80;
+            player.Stamina = player.MaxStamina = 200;
+            player.Mp = player.MaxMp;
+            player.Hp = player.MaxHp;
+            player.Aptitudes.Water = 100;
+            player.Tracking.KillCount = 1;
+            PlayerStatsSystem.RecalcStats(db, player);
+
+            InventorySystem.AddItem(db, player, "core:hp_pill", 3);
+            InventorySystem.AddItem(db, player, "core:iron_sword", 1);
+            EquipmentSystem.EquipItem(db, player, "core:iron_sword");
+            InventorySystem.AddItem(db, player, "core:scroll_technique_basic_sword", 1);
+            LearningSystem.StartStudy(db, player, "core:scroll_technique_basic_sword");
+            LearningSystem.TickStudy(db, player, 99);
+            DivineArtSystem.Learn(db, player, "cp-01:divine_ice_cone");
+            DivineArtSystem.Activate(db, player, "cp-01:divine_ice_cone");
+
+            MapSystem.GetMapState(db, player);
+            MapSystem.TravelTo(db, player, "core:beast_mountain");
+            SectSystem.JoinSect(db, player, "core:qingyun_sect");
+            SectSystem.CompleteSectMission(db, player, "qingyun_patrol");
+            KarmaSystem.ChangeKarma(player, 45, "save-test", "save-major");
+            RankingSystem.Refresh(db, player, true);
+            AchievementSystem.CheckAchievements(player);
+            var chronicle = ChronicleSystem.CreateIncarnation(db, player, ChronicleSystem.Empty());
+            ChronicleSystem.AddEvent(chronicle, new ChronicleEvent { Type = "save_test", Year = player.GameYear, Month = player.GameMonth, Description = "roundtrip" });
+            player.Systems["chronicle"] = chronicle;
+
+            var generated = EquipmentSystem.GenerateEquip(db, player, new FixedRng(0.1), new GenerateEquipOptions { SlotFilter = "weapon", ForcedQuality = "treasure", Seed = 6101 });
+            EquipmentSystem.GetProceduralItemState(player).GeneratedEquips.Add(generated);
+            InventorySystem.AddItem(player, generated.InstanceId, 1);
+            TechniqueGenerator.GetState(player).Instances.Add(TechniqueGenerator.GenerateTechniqueInstance(db, player, player.Techniques.First().TechniqueId, "sword", new Xiuxian.Systems.Procedural.GenerateTechniqueOptions { ForcedQuality = "rare", Seed = 6102 }));
+
+            var storage = new InMemorySaveStorage();
+            var saves = new SaveSystem(storage, () => 1234567890L);
+            failures += Expect("saveLoad.emptyLoad", saves.LoadSlot(4) == null);
+            saves.SaveSlot(2, player);
+            var loaded = saves.LoadSlot(2);
+            failures += Expect("saveLoad.notNull", loaded != null);
+            if (loaded != null)
+            {
+                var originalJson = JToken.Parse(SaveSystem.ToCanonicalJson(player));
+                var loadedJson = JToken.Parse(SaveSystem.ToCanonicalJson(loaded));
+                failures += Expect("saveLoad.roundTrip.deepJson", JToken.DeepEquals(originalJson, loadedJson));
+                failures += Expect("saveLoad.meaningfulState", loaded.RealmIndex == player.RealmIndex
+                    && loaded.Age == player.Age
+                    && loaded.GameYear == player.GameYear
+                    && loaded.GameMonth == player.GameMonth
+                    && loaded.Inventory.Any(x => x.ItemId == "core:hp_pill" && x.Count == 3)
+                    && loaded.Equipped.Weapon == "core:iron_sword"
+                    && loaded.Techniques.Count == player.Techniques.Count
+                    && loaded.Karma == player.Karma
+                    && SectSystem.GetSectState(loaded).SectId == "core:qingyun_sect"
+                    && AchievementSystem.GetState(loaded).UnlockedIds.Contains("core:first_blood")
+                    && RankingSystem.GetState(loaded).Snapshots.ContainsKey("core:combat_power")
+                    && ((CultivationChronicle)loaded.Systems["chronicle"]).Current.Events.Count == 1);
+            }
+
+            var slots = saves.ListSlots();
+            var slot2 = slots[2];
+            failures += Expect("saveLoad.preview", slots.Count == SaveSystem.SaveSlotCount
+                && !slot2.IsEmpty
+                && slot2.Name == "SaveHero"
+                && slot2.RealmIndex == 2
+                && slot2.Age == player.Age
+                && slot2.GameYear == player.GameYear
+                && slot2.GameMonth == player.GameMonth
+                && slot2.SavedAt == 1234567890L);
+            saves.DeleteSlot(2);
+            failures += Expect("saveLoad.delete", saves.LoadSlot(2) == null && saves.ListSlots()[2].IsEmpty);
+
+            Console.WriteLine($"[OK] 存档摘要: slot=2 name={slot2.Name}, realm={slot2.RealmIndex}, age={slot2.Age}, savedAt={slot2.SavedAt}, systems={player.Systems.Count}, deleted={saves.ListSlots()[2].IsEmpty}");
+            return failures;
+        }
 
         private static int Expect(string label, bool condition)
         {
