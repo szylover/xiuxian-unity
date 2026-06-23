@@ -76,6 +76,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateDuplicateKeys(db);
             failures += ValidateCoreCultivationSystems(db);
             failures += ValidateCombatSystems(db);
+            failures += ValidateEconomySystems(db);
 
             if (failures == 0)
             {
@@ -269,6 +270,76 @@ namespace Xiuxian.LogicTests
             failures += Expect("tribulation.default.realResolver", trib.TotalWaves > 0 && (trib.Success || trib.WavesCleared < trib.TotalWaves));
 
             Console.WriteLine($"[OK] 战斗摘要: winner={combat.Winner}, hp={combat.PlayerHpLeft}/{combat.PlayerMaxHp}, exp={combat.ExpGained}, element={counterDamage}>{neutralDamage}, artMp={artResult.MpUsed}, generatedEquip={generated.FinalName}, tribSuccess={trib.Success}, waves={trib.WavesCleared}/{trib.TotalWaves}");
+            return failures;
+        }
+
+        private static int ValidateEconomySystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Economy", Gender = "male", Appearance = 1 }, new SystemRandomRng(21));
+            player.Gold = 500;
+            player.MentalPower = player.MaxMentalPower = 100;
+            player.Aptitudes.Alchemy = 0;
+            player.Aptitudes.Smithing = 100;
+            player.Aptitudes.Mining = 0;
+            player.Aptitudes.Fengshui = 0;
+            player.Luck = 0;
+            player.Charisma = 0;
+            player.Systems["learning"] = new LearningState
+            {
+                LearnedRecipes = new[] { "core:recipe_hp_pill" },
+                LearnedSmithingRecipes = new[] { "core:smith_iron_sword" }
+            };
+
+            var add1 = InventorySystem.AddItem(db, player, "core:herb_lingzhi", 150);
+            var add2 = InventorySystem.AddItem(db, player, "core:herb_lingzhi", 60);
+            failures += Expect("economy.inventory.stack", add1.Added == 150 && add2.Added == 60 && InventorySystem.CountItem(player, "core:herb_lingzhi") == 210 && InventorySystem.GetUsedSlots(player) >= 2);
+            InventorySystem.RemoveItem(player, "core:herb_lingzhi", 10);
+            failures += Expect("economy.inventory.remove", InventorySystem.CountItem(player, "core:herb_lingzhi") == 200);
+            InventorySystem.AddGold(player, 25);
+            var spend = InventorySystem.SpendGold(player, 30);
+            failures += Expect("economy.currency", spend.Success && player.Gold == 495);
+
+            int herbBefore = InventorySystem.CountItem(player, "core:herb_lingzhi");
+            int mentalBefore = player.MentalPower;
+            var alcOk = AlchemySystem.PerformAlchemy(db, player, "core:recipe_hp_pill", new SequenceRng(0.0, 0.9));
+            failures += Expect("economy.alchemy.success", alcOk.Success && alcOk.Quality == "normal" && InventorySystem.CountItem(player, "core:hp_pill") == 2 && InventorySystem.CountItem(player, "core:herb_lingzhi") == herbBefore - 2 && player.MentalPower == mentalBefore - 5);
+            InventorySystem.AddItem(db, player, "core:herb_lingzhi", 2);
+            mentalBefore = player.MentalPower;
+            int pillBefore = InventorySystem.CountItem(player, "core:hp_pill");
+            var alcFail = AlchemySystem.PerformAlchemy(db, player, "core:recipe_hp_pill", new FixedRng(0.999));
+            failures += Expect("economy.alchemy.failConsumes", !alcFail.Success && InventorySystem.CountItem(player, "core:hp_pill") == pillBefore && player.MentalPower == mentalBefore - 5);
+
+            InventorySystem.AddItem(db, player, "core:iron_ore", 5);
+            int goldBeforeSmith = player.Gold;
+            var smith = SmithingSystem.PerformSmithing(db, player, "core:smith_iron_sword", new FixedRng(0.0));
+            failures += Expect("economy.smithing.forge", smith.Success && InventorySystem.CountItem(player, "core:iron_sword") == 1 && InventorySystem.CountItem(player, "core:iron_ore") == 0 && player.Gold == goldBeforeSmith - 10);
+            var equip = EquipmentSystem.EquipItem(db, player, "core:iron_sword");
+            failures += Expect("economy.smithing.equip", equip.Success && player.Equipped.Weapon == "core:iron_sword");
+
+            int goldBeforeBuy = player.Gold;
+            var buy = ShopSystem.BuyItem(db, player, "core:hp_pill", 1);
+            failures += Expect("economy.shop.buy", buy.Success && player.Gold == goldBeforeBuy - ShopSystem.CalcKarmaBuyPrice(20, player.Charisma, player.Karma) && InventorySystem.CountItem(player, "core:hp_pill") == pillBefore + 1);
+            int sellPrice = db.Items["core:hp_pill"].SellPrice;
+            var sell = ShopSystem.SellItem(db, player, "core:hp_pill", 1);
+            failures += Expect("economy.shop.sell", sell.Success && player.Gold == goldBeforeBuy - 20 + sellPrice);
+
+            player.Gold = 1000;
+            var auctionReady = AuctionSystem.RefreshAuctionHouse(db, player, new FixedRng(0.99));
+            var lot = AuctionSystem.GetAuctionState(player).Lots.First();
+            int bid = AuctionSystem.GetNextBid(lot.CurrentBid);
+            int goldBeforeBid = player.Gold;
+            var bidResult = AuctionSystem.PlaceAuctionBid(db, player, lot.Id, new FixedRng(0.99), bid);
+            player.Age += AuctionSystem.RefreshMonths;
+            var settle = AuctionSystem.SettleDueAuctions(db, player, new FixedRng(0.99));
+            failures += Expect("economy.auction.settle", bidResult.Logs.Contains("playerBid") && settle.Logs.Contains("winLot") && InventorySystem.CountItem(player, lot.ItemId) >= lot.Count && player.Gold == goldBeforeBid - bid);
+
+            player.Stamina = player.MaxStamina = 100;
+            player.InventoryCapacity = 50;
+            var mining = MiningSystem.PerformMining(db, player, "core:qingyun_backhill_vein", new SequenceRng(0.0, 0.9, 0.0, 0.0, 0.9, 0.0, 0.0, 0.9, 0.0));
+            failures += Expect("economy.mining.yields", mining.Yields.TryGetValue("core:iron_ore", out var ore) && ore == 3 && player.Stamina == 88 && MiningSystem.GetMiningState(player).MinedCount == 1);
+
+            Console.WriteLine($"[OK] 经济摘要: pills={InventorySystem.CountItem(player, "core:hp_pill")}, gold={player.Gold}, auctionLot={lot.ItemId}x{lot.Count}, minedOre={ore}, slots={InventorySystem.GetUsedSlots(player)}");
             return failures;
         }
 
