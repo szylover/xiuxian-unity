@@ -15,8 +15,10 @@ namespace Xiuxian.Systems
 {
     public sealed class LearningState
     {
+        public ActiveStudy ActiveStudy;
         public string[] LearnedRecipes = new string[0];
         public string[] LearnedSmithingRecipes = new string[0];
+        public int MigrationVersion = 1;
     }
 
     internal static class EconomyStateHelpers
