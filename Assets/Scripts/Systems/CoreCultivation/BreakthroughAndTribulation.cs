@@ -197,6 +197,22 @@ namespace Xiuxian.Systems
         }
     }
 
+    public sealed class RealTribulationCombatResolver : ICombatResolver
+    {
+        private readonly GameDatabase db;
+        public RealTribulationCombatResolver(GameDatabase db) => this.db = db;
+
+        public WaveCombatResult Resolve(Player player, TribulationWave wave, int currentHp, IRng rng)
+        {
+            player.Hp = currentHp;
+            var result = CombatEngine.RunCombat(db, player, CombatantFactory.FromTribulationWave(wave), rng, false, wave.SpecialEffect);
+            var waveResult = new WaveCombatResult { Won = result.Winner == "player", HpLeft = result.PlayerHpLeft };
+            waveResult.Logs.AddRange(result.Logs);
+            waveResult.Logs.Add(waveResult.Won ? CombatTexts.WaveWin(wave.Name, waveResult.HpLeft) : CombatTexts.WaveLose(wave.Name));
+            return waveResult;
+        }
+    }
+
     public sealed class TribulationResult
     {
         public bool Success;
@@ -209,6 +225,7 @@ namespace Xiuxian.Systems
     {
         public static TribulationResult RunTribulation(GameDatabase db, Player p, ICombatResolver resolver, IRng rng)
         {
+            resolver ??= new RealTribulationCombatResolver(db);
             if (!db.Tribulations.TryGetValue(p.RealmIndex, out var def))
             {
                 var none = new TribulationResult { Player = p };

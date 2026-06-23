@@ -75,6 +75,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateIds(db);
             failures += ValidateDuplicateKeys(db);
             failures += ValidateCoreCultivationSystems(db);
+            failures += ValidateCombatSystems(db);
 
             if (failures == 0)
             {
@@ -208,10 +209,66 @@ namespace Xiuxian.LogicTests
             tribPlayer.RealmIndex = 5;
             PlayerStatsSystem.RecalcStats(db, tribPlayer);
             tribPlayer.Hp = tribPlayer.MaxHp;
-            var trib = TribulationSystem.RunTribulation(db, tribPlayer, new StubTribulationCombatResolver(), new FixedRng(0.5));
-            failures += Expect("tribulation.stub", trib.Success && trib.WavesCleared == trib.TotalWaves && trib.Player.RealmIndex == 6);
+            var trib = TribulationSystem.RunTribulation(db, tribPlayer, new RealTribulationCombatResolver(db), new FixedRng(0.5));
+            failures += Expect("tribulation.realResolver", trib.TotalWaves > 0 && (trib.Success || trib.WavesCleared < trib.TotalWaves));
 
             Console.WriteLine("[OK] 核心修炼系统校验完成");
+            return failures;
+        }
+
+        private static int ValidateCombatSystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Combat", Gender = "male", Appearance = 1 }, new SystemRandomRng(11));
+            player.RealmIndex = 1;
+            PlayerStatsSystem.RecalcStats(db, player);
+            player.Hp = player.MaxHp;
+            player.Mp = player.MaxMp;
+            player.Stamina = player.MaxStamina;
+
+            var combat = CombatEngine.RunCombat(db, player, db.Monsters["cp-01:ink_jiao"], new FixedRng(0.5));
+            failures += Expect("combat.knownMonster.winner", combat.Winner == "player" && combat.PlayerHpLeft < combat.PlayerMaxHp && combat.ExpGained > 0);
+
+            var waterArt = db.DivineArts["cp-01:divine_ice_cone"];
+            player.Aptitudes.Water = 100;
+            var pc = CombatantFactory.FromPlayer(db, player);
+            var fireMonster = CombatantFactory.FromMonster(db.Monsters["cp-01:flame_bird"]);
+            fireMonster.Element = ElementType.Fire;
+            var neutralMonster = CombatantFactory.FromMonster(db.Monsters["cp-01:flame_bird"]);
+            neutralMonster.Element = ElementType.Earth;
+            int counterDamage = DivineArtSystem.CalcDamage(player, pc, waterArt, fireMonster, fireMonster.Hp, new FixedRng(0.5)).Damage;
+            int neutralDamage = DivineArtSystem.CalcDamage(player, pc, waterArt, neutralMonster, neutralMonster.Hp, new FixedRng(0.5)).Damage;
+            failures += Expect("combat.elementCounter.damage", counterDamage > neutralDamage);
+
+            DivineArtSystem.Learn(db, player, "cp-01:divine_ice_cone");
+            DivineArtSystem.Activate(db, player, "cp-01:divine_ice_cone");
+            player.Hp = player.MaxHp - 30;
+            player.Mp = player.MaxMp;
+            var artResult = CombatEngine.RunCombat(db, player, CombatantFactory.FromMonster(db.Monsters["cp-01:giant_scorpion"]), new SequenceRng(0.1, 0.9, 0.9, 0.9, 0.9, 0.9), false);
+            failures += Expect("combat.divineArt.effect", artResult.MpUsed >= waterArt.MpCost && artResult.Logs.Any(l => l.Contains("攻击降低") || l.Contains("回复体力")));
+
+            var equipPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Equip", Gender = "female", Appearance = 1 }, new SystemRandomRng(12));
+            var generated = EquipmentSystem.GenerateEquip(db, equipPlayer, new FixedRng(0.1), new GenerateEquipOptions { SlotFilter = "weapon", ForcedQuality = "treasure", Seed = 99 });
+            InventorySystem.AddItem(equipPlayer, generated.InstanceId, 1);
+            int atkBefore = equipPlayer.Atk;
+            var eq = EquipmentSystem.EquipItem(db, equipPlayer, generated.InstanceId);
+            var baseTemplate = db.EquipTemplates[generated.BaseTemplateId];
+            failures += Expect("equipment.affix.aggregate", eq.Success && equipPlayer.Atk > atkBefore + (int)Math.Floor(baseTemplate.BaseStats.GetValueOrDefault("atk") * 2.5));
+
+            var deathPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Death", Gender = "male", Appearance = 1 }, new SystemRandomRng(13));
+            deathPlayer.Exp = 1000; deathPlayer.Gold = 1000; deathPlayer.Hp = 0;
+            var deathCheck = DeathSystem.CheckDeathTriggers(db, deathPlayer, new DeathContext { Source = "combat" });
+            var death = DeathSystem.ApplyDeath(db, deathPlayer, deathCheck.Trigger, new FixedRng(0.5));
+            failures += Expect("death.penalty.light", deathCheck.Triggered && !death.GameOver && death.Player.Exp == 900 && death.Player.Gold == 900 && death.Player.Health <= 80);
+
+            var tribPlayer = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "RealTrib", Gender = "female", Appearance = 2 }, new SystemRandomRng(14));
+            tribPlayer.RealmIndex = 5;
+            PlayerStatsSystem.RecalcStats(db, tribPlayer);
+            tribPlayer.Hp = tribPlayer.MaxHp;
+            var trib = TribulationSystem.RunTribulation(db, tribPlayer, null, new FixedRng(0.5));
+            failures += Expect("tribulation.default.realResolver", trib.TotalWaves > 0 && (trib.Success || trib.WavesCleared < trib.TotalWaves));
+
+            Console.WriteLine($"[OK] 战斗摘要: winner={combat.Winner}, hp={combat.PlayerHpLeft}/{combat.PlayerMaxHp}, exp={combat.ExpGained}, element={counterDamage}>{neutralDamage}, artMp={artResult.MpUsed}, generatedEquip={generated.FinalName}, tribSuccess={trib.Success}, waves={trib.WavesCleared}/{trib.TotalWaves}");
             return failures;
         }
 
@@ -224,6 +281,21 @@ namespace Xiuxian.LogicTests
             }
             Console.Error.WriteLine($"[FAIL] {label}");
             return 1;
+        }
+
+        private sealed class SequenceRng : IRng
+        {
+            private readonly double[] values;
+            private int index;
+            public SequenceRng(params double[] values) => this.values = values;
+            public double NextDouble()
+            {
+                if (values.Length == 0) return 0.5;
+                double value = values[Math.Min(index, values.Length - 1)];
+                index++;
+                return value;
+            }
+            public int NextIntInclusive(int min, int max) => min + (int)Math.Floor(NextDouble() * (max - min + 1));
         }
     }
 }
