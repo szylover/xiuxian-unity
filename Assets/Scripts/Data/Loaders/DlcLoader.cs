@@ -1,12 +1,14 @@
 // ============================================================
 // DlcLoader.cs — DLC 加载器（移植自各 loader.ts + index.ts 注册流程）
 // 数据驱动：扫描 dlc/ 下各包，加载存在的实体 JSON 文件。
-// 目前覆盖 items.json；后续逐实体扩展。
 // UnityEngine-free
 // ============================================================
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xiuxian.Core;
 
 namespace Xiuxian.Data
@@ -38,11 +40,84 @@ namespace Xiuxian.Data
             _db.Packs[package] = meta;
             _db.EnabledPackIds.Add(package);
 
-            if (_source.Exists(package, "items.json"))
+            LoadList<GameEventDef>(package, "events.json", _db.RegisterEvent);
+            LoadList<ItemDef>(package, "items.json", _db.RegisterItem);
+            LoadList<MonsterDef>(package, "monsters.json", _db.RegisterMonster);
+            LoadList<MonsterTemplateDef>(package, "monster-templates.json", _db.RegisterMonsterTemplate);
+            LoadList<MutationDef>(package, "mutations.json", _db.RegisterMutation);
+            LoadList<TechniqueDef>(package, "techniques.json", _db.RegisterTechnique);
+            LoadList<TechniqueTraitDef>(package, "technique-traits.json", _db.RegisterTechniqueTrait);
+            LoadList<DivineArtDef>(package, "divine-arts.json", _db.RegisterDivineArt);
+            LoadList<RegionDef>(package, "regions.json", _db.RegisterRegion);
+            LoadList<NpcDef>(package, "npcs.json", _db.RegisterNpc);
+            LoadList<QuestChainDef>(package, "quests.json", _db.RegisterQuestChain);
+            LoadList<RealmDef>(package, "realms.json", _db.RegisterRealm);
+            LoadBreakthrough(package);
+            LoadList<RecipeDef>(package, "recipes.json", _db.RegisterRecipe);
+            LoadList<SmithingRecipeDef>(package, "smithing.json", _db.RegisterSmithingRecipe);
+            LoadList<EquipDef>(package, "equips.json", _db.RegisterEquip);
+            LoadList<EquipBaseTemplateDef>(package, "equip-templates.json", _db.RegisterEquipTemplate);
+            LoadList<AffixDef>(package, "affixes.json", _db.RegisterAffix);
+            LoadList<BottleneckDef>(package, "bottlenecks.json", _db.RegisterBottleneck);
+            LoadList<AscensionDef>(package, "ascensions.json", _db.RegisterAscension);
+            LoadList<SecretRealmDef>(package, "secret-realms.json", _db.RegisterSecretRealm);
+            LoadList<SectDef>(package, "sects.json", _db.RegisterSect);
+            LoadList<BountyTemplateDef>(package, "bounties.json", _db.RegisterBounty);
+            LoadList<MiningSiteDef>(package, "mining-sites.json", _db.RegisterMiningSite);
+            LoadList<AuctionLotDef>(package, "auction-lots.json", _db.RegisterAuctionLot);
+            LoadList<EventTemplateDef>(package, "event-templates.json", _db.RegisterEventTemplate);
+            LoadList<VariablePoolDef>(package, "event-vocab.json", _db.RegisterVariablePool);
+            LoadList<ShopEntryDef>(package, "shop.json", _db.RegisterShopEntry);
+            LoadBodyConfig(package);
+            LoadDialogues(package);
+        }
+
+        private void LoadList<T>(string package, string fileName, Action<T> register)
+        {
+            if (!_source.Exists(package, fileName)) return;
+            var values = Deserialize<List<T>>(_source.ReadText(package, fileName));
+            if (values == null) return;
+            foreach (var value in values) register(value);
+        }
+
+        private void LoadBreakthrough(string package)
+        {
+            if (!_source.Exists(package, "breakthrough.json")) return;
+            var data = Deserialize<BreakthroughDataDef>(_source.ReadText(package, "breakthrough.json"));
+            if (data?.BreakthroughReqs != null)
+                foreach (var value in data.BreakthroughReqs) _db.RegisterBreakthroughReq(value);
+            if (data?.Tribulations != null)
+                foreach (var value in data.Tribulations) _db.RegisterTribulation(value);
+        }
+
+        private void LoadBodyConfig(string package)
+        {
+            if (!_source.Exists(package, "body-config.json")) return;
+            var data = Deserialize<BodyConfigDef>(_source.ReadText(package, "body-config.json"));
+            if (data?.BodyRealms != null)
+                foreach (var value in data.BodyRealms) _db.RegisterBodyRealm(value);
+            if (data?.SpiritRootBodyBonuses != null)
+                foreach (var value in data.SpiritRootBodyBonuses) _db.RegisterSpiritRootBodyBonus(value);
+        }
+
+        private void LoadDialogues(string package)
+        {
+            var files = new List<string>(_source.ListFiles(package, "dialogues"));
+            files.Sort(StringComparer.Ordinal);
+            foreach (var file in files)
             {
-                var items = Deserialize<List<ItemDef>>(_source.ReadText(package, "items.json"));
-                if (items != null)
-                    foreach (var it in items) _db.RegisterItem(it);
+                var text = _source.ReadText(package, Path.Combine("dialogues", file));
+                var token = JToken.Parse(text);
+                if (token.Type == JTokenType.Array)
+                {
+                    var values = token.ToObject<List<DialogueChainDef>>();
+                    if (values == null) continue;
+                    foreach (var value in values) _db.RegisterDialogue(value);
+                }
+                else if (token.Type == JTokenType.Object)
+                {
+                    _db.RegisterIdleChat(package + ":" + file, token);
+                }
             }
         }
 
