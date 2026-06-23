@@ -42,6 +42,7 @@ namespace Xiuxian.Data
         [JsonProperty("baseExpReward")] public int? BaseExpReward;
         [JsonProperty("baseGoldReward")] public int? BaseGoldReward;
         [JsonProperty("regionTags")] public List<string> RegionTags;
+        [JsonProperty("allowedMutations")] public List<string> AllowedMutations;
     }
 
     public sealed class MutationDef
@@ -53,6 +54,7 @@ namespace Xiuxian.Data
         [JsonProperty("nameSuffix")] public string NameSuffix;
         [JsonProperty("emojiOverride")] public string EmojiOverride;
         [JsonProperty("minRealm")] public int? MinRealm;
+        [JsonProperty("maxRealm")] public int? MaxRealm;
         [JsonProperty("weight")] public int? Weight;
         [JsonProperty("exclusive")] public bool? Exclusive;
         [JsonProperty("element")] public string Element;

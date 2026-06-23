@@ -39,6 +39,8 @@ namespace Xiuxian.Data
         [JsonProperty("baseStats")] public Dictionary<string, double> BaseStats;
         [JsonProperty("baseSellPrice")] public int? BaseSellPrice;
         [JsonProperty("descriptionPattern")] public string DescriptionPattern;
+        [JsonProperty("allowedPrefixes")] public List<string> AllowedPrefixes;
+        [JsonProperty("allowedSuffixes")] public List<string> AllowedSuffixes;
     }
 
     public sealed class AffixDef
@@ -52,6 +54,7 @@ namespace Xiuxian.Data
         [JsonProperty("slotRestriction")] public List<string> SlotRestriction;
         [JsonProperty("excludeAffixes")] public List<string> ExcludeAffixes;
         [JsonProperty("minRealm")] public int? MinRealm;
+        [JsonProperty("maxRealm")] public int? MaxRealm;
     }
 
     public sealed class RecipeDef

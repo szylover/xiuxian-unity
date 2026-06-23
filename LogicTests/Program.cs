@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Xiuxian.Core;
 using Xiuxian.Data;
 using Xiuxian.Systems;
+using Xiuxian.Systems.Procedural;
 
 namespace Xiuxian.LogicTests
 {
@@ -80,6 +81,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateEconomySystems(db);
             failures += ValidateWorldSocialSystems(db);
             failures += ValidateAdvancedProgressionSystems(db);
+            failures += ValidateProceduralSystems(db);
 
             if (failures == 0)
             {
@@ -481,6 +483,71 @@ namespace Xiuxian.LogicTests
             Console.WriteLine($"[OK] 进阶机制摘要: destiny={player.DestinyId}, insight={EnlightenmentSystem.GetState(player).UnlockedInsightIds.Count}, karma={player.Karma}/{karma.Alignment}, heartDemon={HeartDemonSystem.GetState(player).Value}, rank={rank.PlayerRank}, pvp={pvp.CombatResult.Winner}, reinc={ReincarnationSystem.GetState(reinc.NewPlayer).Count}, ascended={AscensionSystem.GetState(player).HasAscended}, endgame={PrimordialEndgameSystem.GetState(player).CompletedId}, techniques={player.Techniques.Count}, achievements={AchievementSystem.GetState(player).UnlockedIds.Count}, chronicleEvents={chronicle.Current.Events.Count}");
             return failures;
         }
+
+        private static int ValidateProceduralSystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "Procedural", Gender = "male", Appearance = 1 }, new SystemRandomRng(51));
+            player.RealmIndex = 2;
+            player.Luck = 30;
+            player.Gold = 100;
+            player.InventoryCapacity = 50;
+            PlayerStatsSystem.RecalcStats(db, player);
+            player.Hp = player.MaxHp;
+            player.Mp = player.MaxMp;
+            player.Stamina = player.MaxStamina;
+
+            var a = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "A", Gender = "male", Appearance = 1 }, new SystemRandomRng(52));
+            var b = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "B", Gender = "male", Appearance = 1 }, new SystemRandomRng(52));
+            a.RealmIndex = b.RealmIndex = 2; a.Luck = b.Luck = 30;
+
+            var ev1 = EventGenerator.GenerateEvent(db, a, "explore", null, 7001)?.Event;
+            var ev2 = EventGenerator.GenerateEvent(db, b, "explore", null, 7001)?.Event;
+            failures += Expect("procedural.event.sameSeed", SameJson(ev1, ev2));
+            ev1.Category = "proc-test";
+            db.Events[ev1.Id] = ev1;
+            player.Hp = Math.Max(1, player.MaxHp - 40);
+            player.Mp = Math.Max(0, player.MaxMp - 20);
+            player.Mood = 50;
+            int goldBefore = player.Gold, expBefore = player.Exp, hpBefore = player.Hp, mpBefore = player.Mp;
+            var available = EventSystem.GetAvailableEvents(db, player, "proc-test");
+            var evApply = EventSystem.TriggerEvent(db, player, "proc-test", new FixedRng(0));
+            failures += Expect("procedural.event.engine", available.Any(x => x.Id == ev1.Id) && evApply != null && evApply.EventId == ev1.Id && (player.Gold != goldBefore || player.Exp != expBefore || player.Hp != hpBefore || player.Mp != mpBefore));
+
+            var mon1 = MonsterGenerator.GenerateMonsterVariant(db, a, new Xiuxian.Systems.Procedural.GenerateMonsterOptions { Seed = 7002 })?.Monster;
+            var mon2 = MonsterGenerator.GenerateMonsterVariant(db, b, new Xiuxian.Systems.Procedural.GenerateMonsterOptions { Seed = 7002 })?.Monster;
+            failures += Expect("procedural.monster.sameSeed", SameJson(mon1, mon2));
+            failures += Expect("procedural.monster.scaled", mon1 != null && mon1.RealmIndex == 2 && mon1.Hp > 50 && mon1.Atk > 10 && mon1.ExpReward > 20);
+            var combat = CombatEngine.RunCombat(db, player, CombatantFactory.FromMonster(mon1), new FixedRng(0.4), false);
+            failures += Expect("procedural.monster.combatUsable", combat.MonsterMaxHp == mon1.Hp && !string.IsNullOrEmpty(combat.Winner));
+
+            var eq1 = EquipGenerator.GenerateEquip(db, a, new GenerateEquipOptions { SlotFilter = "weapon", ForcedQuality = "treasure", Seed = 7003 });
+            var eq2 = EquipGenerator.GenerateEquip(db, b, new GenerateEquipOptions { SlotFilter = "weapon", ForcedQuality = "treasure", Seed = 7003 });
+            failures += Expect("procedural.equip.sameSeed", SameJson(eq1, eq2));
+            EquipmentSystem.GetProceduralItemState(player).GeneratedEquips.Add(eq1);
+            InventorySystem.AddItem(player, eq1.InstanceId, 1);
+            int atkBefore = player.Atk;
+            var equipResult = EquipmentSystem.EquipItem(db, player, eq1.InstanceId);
+            var bonus = EquipmentSystem.GetEquipmentStatBonus(db, player);
+            failures += Expect("procedural.equip.usable", equipResult.Success && eq1.PrefixIds.Count + eq1.SuffixIds.Count > 0 && eq1.FinalStats.Count > 0 && bonus.Atk > 0 && player.Atk > atkBefore);
+
+            var baseTech = db.Techniques.Values.First(t => !string.IsNullOrEmpty(t.Type));
+            var tech1 = TechniqueGenerator.GenerateTechniqueInstance(db, a, baseTech.Id, baseTech.Type, new Xiuxian.Systems.Procedural.GenerateTechniqueOptions { ForcedQuality = "rare", Seed = 7004 });
+            var tech2 = TechniqueGenerator.GenerateTechniqueInstance(db, b, baseTech.Id, baseTech.Type, new Xiuxian.Systems.Procedural.GenerateTechniqueOptions { ForcedQuality = "rare", Seed = 7004 });
+            failures += Expect("procedural.technique.sameSeed", SameJson(tech1, tech2));
+            player.Techniques.Add(new TechniqueSlot { TechniqueId = baseTech.Id, Level = 1, Exp = 0, InstanceId = tech1.InstanceId });
+            player.ActiveTechniqueId = baseTech.Id;
+            TechniqueGenerator.GetState(player).Instances.Add(tech1);
+            var traitBonus = TechniqueGenerator.GetTraitBonus(player, tech1.InstanceId);
+            var activeBonus = TechniqueSystem.GetActiveTechniqueBonus(db, player);
+            failures += Expect("procedural.technique.traits", tech1.Traits.Count > 0 && traitBonus.Count > 0 && traitBonus.Keys.Any(k => activeBonus.ContainsKey(k)));
+
+            Console.WriteLine($"[OK] 程序化摘要: event={ev1.Name}/{evApply.Message}, monster={mon1.Name} hp={mon1.Hp} atk={mon1.Atk} combat={combat.Winner}, equip={eq1.FinalName} affixes={eq1.PrefixIds.Count + eq1.SuffixIds.Count} atkBonus={bonus.Atk}, technique={baseTech.Name} traits={tech1.Traits.Count}");
+            return failures;
+        }
+
+        private static bool SameJson(object a, object b) =>
+            Newtonsoft.Json.JsonConvert.SerializeObject(a) == Newtonsoft.Json.JsonConvert.SerializeObject(b);
 
         private static int Expect(string label, bool condition)
         {

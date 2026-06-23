@@ -59,7 +59,9 @@ namespace Xiuxian.Data
         [JsonProperty("baseValue")] public double? BaseValue;
         [JsonProperty("qualityScaling")] public double? QualityScaling;
         [JsonProperty("minRealm")] public int? MinRealm;
+        [JsonProperty("maxRealm")] public int? MaxRealm;
         [JsonProperty("typeRestriction")] public JToken TypeRestriction;
+        [JsonProperty("excludeTraits")] public List<string> ExcludeTraits;
         [JsonProperty("weight")] public int? Weight;
     }
 }

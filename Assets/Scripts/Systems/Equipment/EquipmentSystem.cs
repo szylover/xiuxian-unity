@@ -137,38 +137,7 @@ namespace Xiuxian.Systems
 
         public static GeneratedEquipInstance GenerateEquip(GameDatabase db, Player player, IRng rng, GenerateEquipOptions options = null)
         {
-            options ??= new GenerateEquipOptions();
-            var state = GetProceduralItemState(player);
-            var tier = string.IsNullOrEmpty(options.ForcedQuality) ? RollQuality(rng, player.Luck) : GetQualityTier(options.ForcedQuality);
-            var templates = db.EquipTemplates.Values
-                .Where(t => (t.MinRealm ?? 0) <= player.RealmIndex && (string.IsNullOrEmpty(options.SlotFilter) || t.Slot == options.SlotFilter))
-                .ToList();
-            if (templates.Count == 0) return null;
-
-            var template = templates[Math.Min(templates.Count - 1, rng.NextIntInclusive(0, templates.Count - 1))];
-            var selected = new HashSet<string>();
-            var prefixes = PickAffixes(db, template, "prefix", tier.PrefixSlots, player.RealmIndex, selected, rng);
-            var suffixes = PickAffixes(db, template, "suffix", tier.SuffixSlots, player.RealmIndex, selected, rng);
-            var stats = ScaleStats(template.BaseStats, tier.StatMultiplier);
-            foreach (var affix in prefixes.Concat(suffixes)) MergeStats(stats, affix.StatBonus);
-
-            int seed = options.Seed ?? (state.MasterSeed + state.EquipCounter);
-            var inst = new GeneratedEquipInstance
-            {
-                InstanceId = $"proc-equip:{seed:x}",
-                BaseTemplateId = template.Id,
-                Quality = tier.Quality,
-                Seed = seed,
-                FinalName = BuildName(template, prefixes, suffixes, tier),
-                FinalStats = stats,
-                FinalSellPrice = (int)Math.Floor((template.BaseSellPrice ?? 0) * tier.PriceMultiplier * (1 + (prefixes.Count + suffixes.Count) * 0.3)),
-                Description = BuildDescription(template, prefixes, suffixes, tier),
-            };
-            inst.PrefixIds.AddRange(prefixes.Select(x => x.Id));
-            inst.SuffixIds.AddRange(suffixes.Select(x => x.Id));
-            state.GeneratedEquips.Add(inst);
-            state.EquipCounter++;
-            return inst;
+            return Procedural.EquipGenerator.GenerateEquip(db, player, options);
         }
 
         internal static string GetSlot(EquippedSlots slots, string slot)

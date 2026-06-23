@@ -37,6 +37,8 @@ namespace Xiuxian.Systems
                     result[stat] = result.Get(stat) + value;
                 }
             }
+            foreach (var kv in Procedural.TechniqueGenerator.GetTraitBonus(player, slot.InstanceId))
+                result[kv.Key] = result.Get(kv.Key) + kv.Value;
             return result;
         }
 
