@@ -44,6 +44,11 @@ namespace Xiuxian.App
         public const string RealmUnknown = "未知境界";
         public const string Unknown = "未知";
         public const string None = "无";
+        public const string PresentationPortrait = "角色立绘";
+        public const string SceneUnknownRegion = "未知之地";
+        public const string SceneNoDescription = "云雾缭绕，灵机未明。";
+        public const string SceneNoExits = "暂无可去之处";
+        public const string SceneNoNpcs = "此地暂无可见之人";
         public const string AgeUnit = "岁";
         public const string MonthUnit = "月";
         public const string Hp = "体力";
@@ -394,6 +399,9 @@ namespace Xiuxian.App
         public static string HudNameRealm(string name, string realm) => $"{name}【{realm}】";
         public static string StatValue(string label, object value) => $"{label} {value}";
         public static string StatCurrentMax(string label, int current, int max) => $"{label} {current}/{max}";
+        public static string SceneTitle(string title) => $"◇ {title}";
+        public static string SceneExits(string exits) => $"可去之处：{(string.IsNullOrEmpty(exits) ? SceneNoExits : exits)}";
+        public static string SceneNpcs(string npcs) => $"此地之人：{(string.IsNullOrEmpty(npcs) ? SceneNoNpcs : npcs)}";
         public static string CurrentMax(int current, int max) => $"{current}/{max}";
         public static string Percent(double value) => $"{value:0.#}%";
         public static string Multiplier(double value) => $"×{value:0.##}";
