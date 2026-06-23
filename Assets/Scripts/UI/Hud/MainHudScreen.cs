@@ -11,6 +11,7 @@ using Xiuxian.Core;
 using Xiuxian.Presentation;
 using Xiuxian.Presentation.Animation;
 using Xiuxian.Presentation.Audio;
+using Xiuxian.Presentation.Feedback;
 using Xiuxian.Presentation.Vfx;
 
 namespace Xiuxian.UI
@@ -36,6 +37,8 @@ namespace Xiuxian.UI
         private SoundControls soundControls;
         private VfxDirector vfxDirector;
         private VfxOverlay vfxOverlay;
+        private FeedbackDirector feedbackDirector;
+        private FeedbackOverlay feedbackOverlay;
         private RectTransform statusBarRect;
         private RectTransform logRect;
 
@@ -73,6 +76,7 @@ namespace Xiuxian.UI
             BuildLog(log.transform);
             vfxOverlay = VfxOverlay.Attach(transform);
             if (vfxOverlay != null) vfxOverlay.SetEnabled(VfxSettings.Enabled);
+            feedbackOverlay = FeedbackOverlay.Attach(transform);
 
             var animationTargets = new AnimationTargets
             {
@@ -85,6 +89,7 @@ namespace Xiuxian.UI
             animationDirector = new AnimationDirector(Context, presentationController, animationTargets);
             audioDirector = new AudioDirector(Context, AudioManager.Instance, animationDirector);
             vfxDirector = new VfxDirector(Context, animationDirector, vfxOverlay, animationTargets);
+            feedbackDirector = new FeedbackDirector(Context, animationDirector, feedbackOverlay, animationTargets);
             ShowPanel(activePanel);
             presentationController.RefreshAll();
             Context.Bus.Subscribe(OnGameEvent);
@@ -100,6 +105,7 @@ namespace Xiuxian.UI
             goldText = AddStatus(parent, string.Empty);
             ageText = AddStatus(parent, string.Empty);
             UIBuilder.Layout(UIBuilder.Toggle(parent, UiTexts.VfxToggle, VfxSettings.Enabled, OnVfxToggleChanged).gameObject, preferredWidth: 130, preferredHeight: 52);
+            UIBuilder.Layout(UIBuilder.Toggle(parent, UiTexts.FeedbackToggle, FeedbackSettings.Enabled, OnFeedbackToggleChanged).gameObject, preferredWidth: 150, preferredHeight: 52);
             soundControls = new SoundControls(parent, AudioManager.Instance);
             UIBuilder.Layout(UIBuilder.Button(parent, UiTexts.MainMenu, () => { Context.SaveCurrent(); Context.ExitToStart(); Navigator.Show<StartScreen>(); }).gameObject, preferredWidth: 140, preferredHeight: 52);
             RefreshStatus();
@@ -109,6 +115,12 @@ namespace Xiuxian.UI
         {
             if (vfxDirector != null) vfxDirector.Enabled = enabled;
             else VfxSettings.Enabled = enabled;
+        }
+
+        private void OnFeedbackToggleChanged(bool enabled)
+        {
+            if (feedbackDirector != null) feedbackDirector.Enabled = enabled;
+            else FeedbackSettings.Enabled = enabled;
         }
 
         private TMP_Text AddStatus(Transform parent, string text)
@@ -219,6 +231,7 @@ namespace Xiuxian.UI
         {
             if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
             soundControls?.Dispose();
+            feedbackDirector?.Dispose();
             audioDirector?.Dispose();
             vfxDirector?.Dispose();
             animationDirector?.Dispose();

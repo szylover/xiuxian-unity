@@ -104,6 +104,9 @@ namespace Xiuxian.App
             Publish(GameEventType.LogAppended, message);
         }
 
+        public void RequestToast(string text, ToastSeverity severity = ToastSeverity.Info, float durationSeconds = 0f)
+            => Publish(GameEventType.ToastRequested, new ToastRequest { Text = text, Severity = severity, DurationSeconds = durationSeconds });
+
         public void Publish(GameEvent gameEvent)
             => Bus.Publish(gameEvent);
 
@@ -548,7 +551,8 @@ namespace Xiuxian.App
             var result = SecretRealmSystem.AdvanceSecretRealm(Database, CurrentPlayer, rng);
             CurrentPlayer = result.Player;
             AddSystemLogs(UiTexts.SecretRealm, result.Logs, UiTexts.SecretRealmLog);
-            PublishPlayerChanges(GameEventType.SecretRealmChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged, GameEventType.CombatChanged);
+            PublishPlayerChanges(GameEventType.SecretRealmChanged, GameEventType.InventoryChanged, GameEventType.PlayerStatsChanged);
+            PublishCombatFeedback(result.Combat);
         }
 
         public void FinishSecretRealm()
@@ -629,6 +633,7 @@ namespace Xiuxian.App
             CurrentPlayer = result.Player;
             AddLog(UiTexts.LogOperation(UiTexts.Pvp, UiTexts.PvpResult(result.Message)));
             PublishPlayerChanges(GameEventType.PvpChanged, GameEventType.RankingChanged, GameEventType.PlayerStatsChanged, GameEventType.CurrencyChanged);
+            PublishCombatFeedback(result.CombatResult);
         }
 
         public void SuppressHeartDemon()
@@ -662,7 +667,8 @@ namespace Xiuxian.App
             CurrentPlayer = result.Player;
             AddSystemLogs(UiTexts.HeartDemon, result.Logs, line => line);
             AddLog(UiTexts.LogOperation(UiTexts.HeartDemon, UiTexts.HeartDemonBattleResult(result.Message)));
-            PublishPlayerChanges(GameEventType.HeartDemonChanged, GameEventType.EnlightenmentChanged, GameEventType.PlayerStatsChanged, GameEventType.CombatChanged);
+            PublishPlayerChanges(GameEventType.HeartDemonChanged, GameEventType.EnlightenmentChanged, GameEventType.PlayerStatsChanged);
+            PublishCombatFeedback(result.CombatResult);
         }
 
         private void AdvanceTime(int months)
@@ -710,6 +716,35 @@ namespace Xiuxian.App
                 AddLog(UiTexts.LogOperation(panel, formatter == null ? log : formatter(log)));
             }
             if (!any) AddLog(UiTexts.LogOperation(panel, UiTexts.OperationFailed));
+        }
+
+        private void PublishCombatFeedback(CombatResult result)
+        {
+            if (result == null)
+            {
+                Publish(GameEventType.CombatChanged, CurrentPlayer);
+                return;
+            }
+
+            var hit = result.HitSnapshots
+                .OrderByDescending(h => h.IsCrit)
+                .ThenByDescending(h => h.Damage)
+                .FirstOrDefault();
+            var payload = new CombatFeedbackPayload();
+            if (hit != null)
+            {
+                payload.Damage = hit.Damage;
+                payload.IsCrit = hit.IsCrit;
+                payload.IsDodge = hit.IsDodge;
+                payload.FromPlayer = hit.FromPlayer;
+                payload.SourceName = hit.SourceName;
+                payload.TargetName = hit.TargetName;
+            }
+            if (result.ExpGained > 0)
+                payload.ExtraTexts.Add(new FloatingFeedbackPayload { Text = UiTexts.FeedbackCultivationGain(result.ExpGained), Style = FeedbackTextStyle.Cultivation, Magnitude = result.ExpGained });
+            if (result.GoldGained > 0)
+                payload.ExtraTexts.Add(new FloatingFeedbackPayload { Text = UiTexts.FeedbackGoldGain(result.GoldGained), Style = FeedbackTextStyle.Gain, Magnitude = result.GoldGained });
+            Publish(GameEventType.CombatChanged, payload);
         }
 
         private static string PackageSortKey(string id)
