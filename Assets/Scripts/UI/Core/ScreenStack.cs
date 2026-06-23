@@ -5,6 +5,7 @@
 using System;
 using UnityEngine;
 using Xiuxian.App;
+using Xiuxian.Presentation.Animation;
 
 namespace Xiuxian.UI
 {
@@ -30,6 +31,7 @@ namespace Xiuxian.UI
             screen.SetDependencies(context, this);
             configure?.Invoke(screen);
             screen.BuildScreen();
+            UiTransitionLibrary.PlayScreenEnter(go);
             return screen;
         }
     }

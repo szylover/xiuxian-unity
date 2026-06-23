@@ -28,7 +28,7 @@
 
 ## 阶段 4 — 表现力升级（核心增量）
 - [x] 立绘/场景框架（#12，Presentation 层 provider/placeholder + HUD 接入）
-- [ ] 关键动画与转场
+- [x] 关键动画与转场（#13，Tweener + AnimationDirector；#14 粒子、#16 飘字/震屏通过表现层事件继续扩展）
 - [ ] 粒子特效
 - [ ] 音效 + BGM
 - [ ] 动态反馈（飘字/镜头/震屏）
