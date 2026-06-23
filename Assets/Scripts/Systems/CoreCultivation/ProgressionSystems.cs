@@ -87,6 +87,19 @@ namespace Xiuxian.Systems
             p.MaxPhysique = body.MaxPhysique;
             p.PhysiqueDmgReduce = Math.Min(50, body.PhysiqueDmgReduce);
 
+            var equip = EquipmentSystem.GetEquipmentStatBonus(db, p);
+            p.MaxHp += equip.Hp;
+            p.MaxMp += equip.Mp;
+            p.Atk += equip.Atk;
+            p.Def += equip.Def;
+            p.Speed += equip.Speed;
+            p.MoveSpeed += equip.MoveSpeed;
+            p.CritRate += equip.CritRate;
+            p.CritDmgMultiplier += equip.CritDmgMultiplier;
+            p.CritResist += equip.CritResist;
+            p.MaxPhysique += equip.Physique;
+            p.PhysiqueDmgReduce = Math.Min(50, p.PhysiqueDmgReduce + equip.PhysiqueDmgReduce);
+
             p.Hp = Math.Min(p.Hp, p.MaxHp);
             p.Mp = Math.Min(p.Mp, p.MaxMp);
             p.Stamina = Math.Min(p.Stamina, p.MaxStamina);
