@@ -22,6 +22,10 @@ namespace Xiuxian.Presentation
         private TMP_Text exitsText;
         private TMP_Text npcsText;
 
+        public GameObject Root { get; private set; }
+        public Image BackgroundImage => backgroundImage;
+        public Image ShadeImage => shadeImage;
+
         public SceneView(Transform parent, PresentationController controller)
         {
             this.controller = controller;
@@ -33,6 +37,7 @@ namespace Xiuxian.Presentation
         private void Build(Transform parent)
         {
             var root = UIBuilder.Rect("SceneBackdrop", parent);
+            Root = root;
             UIBuilder.Stretch(root.GetComponent<RectTransform>());
             backgroundImage = root.AddComponent<Image>();
             backgroundImage.color = new Color(0.08f, 0.06f, 0.04f, 0.9f);

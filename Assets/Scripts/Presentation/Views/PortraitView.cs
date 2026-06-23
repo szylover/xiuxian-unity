@@ -19,6 +19,10 @@ namespace Xiuxian.Presentation
         private Image frameImage;
         private TMP_Text captionText;
 
+        public GameObject Root { get; private set; }
+        public Image PortraitImage => portraitImage;
+        public Image FrameImage => frameImage;
+
         public PortraitView(Transform parent, PresentationController controller)
         {
             this.controller = controller;
@@ -30,6 +34,7 @@ namespace Xiuxian.Presentation
         private void Build(Transform parent)
         {
             var root = UIBuilder.Panel(parent, "PortraitView", new Color(0.05f, 0.04f, 0.035f, 0.72f));
+            Root = root;
             UIBuilder.Layout(root, preferredHeight: 238);
             UIBuilder.Vertical(root, 10, 6).childAlignment = TextAnchor.UpperCenter;
 

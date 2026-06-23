@@ -45,6 +45,7 @@ namespace Xiuxian.App
         public const string Unknown = "未知";
         public const string None = "无";
         public const string PresentationPortrait = "角色立绘";
+        public const string AnimationRealmAdvance = "境界突破";
         public const string SceneUnknownRegion = "未知之地";
         public const string SceneNoDescription = "云雾缭绕，灵机未明。";
         public const string SceneNoExits = "暂无可去之处";

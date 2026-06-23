@@ -9,6 +9,7 @@ using UnityEngine.UI;
 using Xiuxian.App;
 using Xiuxian.Core;
 using Xiuxian.Presentation;
+using Xiuxian.Presentation.Animation;
 
 namespace Xiuxian.UI
 {
@@ -28,16 +29,20 @@ namespace Xiuxian.UI
         private PresentationController presentationController;
         private PortraitView portraitView;
         private Xiuxian.Presentation.SceneView sceneView;
+        private AnimationDirector animationDirector;
+        private RectTransform statusBarRect;
+        private RectTransform logRect;
 
         protected override void Build()
         {
             RegisterPanels();
-            presentationController = new PresentationController(Context);
+            presentationController = new AnimatedPresentationController(Context);
             var root = UIBuilder.Panel(transform, "HudRoot", new Color(0.035f, 0.028f, 0.022f, 1f));
             UIBuilder.Stretch(root.GetComponent<RectTransform>());
             UIBuilder.Vertical(root, 8, 8);
 
             var status = UIBuilder.Panel(root.transform, "StatusBar", new Color(0.11f, 0.075f, 0.045f, 0.98f));
+            statusBarRect = status.GetComponent<RectTransform>();
             UIBuilder.Layout(status, preferredHeight: 78);
             BuildStatus(status.transform);
 
@@ -57,9 +62,18 @@ namespace Xiuxian.UI
             panelHost = panelLayer.transform;
 
             var log = UIBuilder.Panel(body.transform, "GameLog", new Color(0.05f, 0.04f, 0.035f, 0.94f));
+            logRect = log.GetComponent<RectTransform>();
             UIBuilder.Layout(log, preferredWidth: 390, flexibleHeight: 1);
             BuildLog(log.transform);
 
+            animationDirector = new AnimationDirector(Context, presentationController, new AnimationTargets
+            {
+                Root = root.transform,
+                StatusBar = statusBarRect,
+                CombatFeedbackArea = logRect,
+                PortraitView = portraitView,
+                SceneView = sceneView,
+            });
             ShowPanel(activePanel);
             presentationController.RefreshAll();
             Context.Bus.Subscribe(OnGameEvent);
@@ -148,6 +162,7 @@ namespace Xiuxian.UI
             activePanel = id;
             for (var i = panelHost.childCount - 1; i >= 0; i--) Destroy(panelHost.GetChild(i).gameObject);
             panels[id].Build(panelHost, Context);
+            for (var i = 0; i < panelHost.childCount; i++) UiTransitionLibrary.PlayPanelSwitch(panelHost.GetChild(i));
             RefreshLog();
         }
 
@@ -184,6 +199,7 @@ namespace Xiuxian.UI
         private void OnDestroy()
         {
             if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
+            animationDirector?.Dispose();
             portraitView?.Dispose();
             sceneView?.Dispose();
             presentationController?.Dispose();
