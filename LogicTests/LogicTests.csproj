@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>XiuxianLogicTests</AssemblyName>
+    <RootNamespace>Xiuxian.LogicTests</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 本地校验工程源码 -->
+    <Compile Include="Program.cs" />
+    <Compile Include="Playthrough.cs" />
+    <!-- 复用 Unity 工程中 UnityEngine-free 的数据/逻辑层源码 -->
+    <Compile Include="..\Assets\Scripts\Core\**\*.cs" />
+    <Compile Include="..\Assets\Scripts\Data\**\*.cs" />
+    <Compile Include="..\Assets\Scripts\Systems\**\*.cs" />
+  </ItemGroup>
+
+</Project>

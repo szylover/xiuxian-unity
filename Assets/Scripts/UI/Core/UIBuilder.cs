@@ -3,6 +3,7 @@
 // ============================================================
 
 using System;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -38,14 +39,33 @@ namespace Xiuxian.UI
 
         public static TMP_Text Label(Transform parent, string text, int size = 28, TextAlignmentOptions alignment = TextAlignmentOptions.Center)
         {
+            EnsureTmpSettings();
             var go = Rect("Label", parent);
             var label = go.AddComponent<TextMeshProUGUI>();
+            if (TMP_Settings.defaultFontAsset != null)
+                label.font = TMP_Settings.defaultFontAsset;
             label.text = text;
             label.fontSize = size;
             label.alignment = alignment;
             label.color = new Color(0.94f, 0.88f, 0.72f, 1f);
             label.raycastTarget = false;
             return label;
+        }
+
+        private static void EnsureTmpSettings()
+        {
+            if (TMP_Settings.instance != null) return;
+
+            var settings = ScriptableObject.CreateInstance<TMP_Settings>();
+            typeof(TMP_Settings).GetField("s_Instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, settings);
+
+            if (TMP_Settings.defaultFontAsset != null) return;
+
+            var font = Font.CreateDynamicFontFromOSFont(new[] { "Microsoft YaHei UI", "Microsoft YaHei", "Arial" }, 90)
+                ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            if (font != null)
+                TMP_Settings.defaultFontAsset = TMP_FontAsset.CreateFontAsset(font);
         }
 
         public static Button Button(Transform parent, string text, Action onClick, bool playClickSound = true)
