@@ -36,6 +36,7 @@ namespace Xiuxian.Data
         [JsonProperty("weight")] public int? Weight;
         [JsonProperty("variableSlots")] public List<string> VariableSlots;
         [JsonProperty("varConstraints")] public JToken VarConstraints;
+        [JsonProperty("regionTags")] public List<string> RegionTags;
     }
 
     public sealed class VariablePoolDef
