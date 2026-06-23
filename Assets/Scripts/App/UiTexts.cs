@@ -2,6 +2,9 @@
 // UiTexts.cs — centralized Chinese UI copy for the uGUI shell
 // ============================================================
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xiuxian.Systems;
 
 namespace Xiuxian.App
@@ -39,13 +42,20 @@ namespace Xiuxian.App
         public const string LoadingFailed = "数据加载失败";
         public const string NoLog = "暂无日志";
         public const string RealmUnknown = "未知境界";
+        public const string Unknown = "未知";
+        public const string None = "无";
         public const string AgeUnit = "岁";
+        public const string MonthUnit = "月";
         public const string Hp = "体力";
         public const string Mp = "灵力";
         public const string Stamina = "精力";
+        public const string MentalPower = "念力";
+        public const string Physique = "体魄";
         public const string Gold = "灵石";
         public const string Age = "年龄";
+        public const string Lifespan = "寿元";
         public const string Luck = "运气";
+        public const string Karma = "业力";
         public const string Comprehension = "悟性";
         public const string Charisma = "魅力";
         public const string Mood = "心境";
@@ -53,16 +63,319 @@ namespace Xiuxian.App
         public const string SpiritRoot = "灵根";
         public const string Aptitude = "资质";
         public const string Cultivation = "修炼";
+        public const string Action = "行动";
         public const string Inventory = "背包";
         public const string Map = "地图";
         public const string Combat = "战斗";
         public const string Sect = "门派";
         public const string Quests = "任务";
+        public const string Quest = "任务";
         public const string Shop = "商店";
         public const string Equipment = "装备";
         public const string Technique = "功法";
+        public const string DivineArts = "神通";
+        public const string Talent = "天赋";
+        public const string Enlightenment = "悟道";
+        public const string Learning = "学习";
         public const string Alchemy = "炼丹";
+        public const string Smithing = "炼器";
+        public const string Crafting = "制作";
+        public const string Auction = "拍卖";
+        public const string Mining = "采矿";
         public const string World = "世界";
+        public const string Npc = "NPC";
+        public const string SecretRealm = "秘境";
+        public const string Bounty = "悬赏";
+        public const string Companion = "同伴";
+        public const string Achievement = "成就";
+        public const string Chronicle = "履历";
+        public const string Ranking = "排行";
+        public const string Pvp = "论道";
+        public const string HeartDemon = "心魔";
+        public const string NavCategoryCultivation = "角色 / 修炼";
+        public const string NavCategoryEconomy = "物品 / 经济";
+        public const string NavCategoryWorld = "世界 / 社交";
+        public const string NavCategoryAdvanced = "进阶";
+        public const string NavCategorySystem = "系统";
+        public const string SectionRealm = "修炼境界";
+        public const string SectionBaseStats = "基础属性";
+        public const string SectionCombatStats = "战斗属性";
+        public const string SectionInnate = "先天属性";
+        public const string SectionSpiritRoots = "灵根资质";
+        public const string SectionLifeAptitudes = "生活资质";
+        public const string SectionWeaponAptitudes = "武技资质";
+        public const string SectionTracking = "追踪数据";
+        public const string QiRealm = "气修境界";
+        public const string QiExp = "气修修为";
+        public const string BodyRealm = "体修境界";
+        public const string BodyExp = "体修修为";
+        public const string BodyTempering = "淬体次数";
+        public const string DamageReduce = "体魄减伤";
+        public const string InventoryCapacity = "背包容量";
+        public const string Atk = "攻击";
+        public const string Def = "防御";
+        public const string Speed = "脚力";
+        public const string MoveSpeed = "移速";
+        public const string CritRate = "会心率";
+        public const string CritDmg = "会心伤害";
+        public const string CritResist = "护心";
+        public const string SkillResist = "功法抗性";
+        public const string SpellResist = "神通抗性";
+        public const string Kills = "击杀数";
+        public const string BossKills = "Boss 击杀";
+        public const string CultivateAction = "修炼 / 打坐";
+        public const string BreakthroughAction = "气修突破";
+        public const string BodyCultivateAction = "体修淬炼";
+        public const string BodyBreakthroughAction = "体修突破";
+        public const string RestAction = "休息调息";
+        public const string ActiveBottleneck = "瓶颈";
+        public const string NeedMoreExp = "修为不足";
+        public const string NeedMorePhysique = "体魄不足";
+        public const string AlreadyPeak = "已达当前巅峰";
+        public const string DestinyTitle = "命格";
+        public const string TalentTitle = "天赋";
+        public const string TalentTreeTitle = "天赋树";
+        public const string TalentPoints = "天赋点";
+        public const string Unlock = "解锁";
+        public const string Unlocked = "已解锁";
+        public const string Locked = "未解锁";
+        public const string NoDestiny = "尚未觉醒命格";
+        public const string NoTalents = "尚未获得天赋";
+        public const string EffectTitle = "效果";
+        public const string KnownTechniques = "已学功法";
+        public const string NoTechniques = "尚未习得任何功法。可在学习面板研读功法卷轴。";
+        public const string Practice = "修炼";
+        public const string Activate = "激活";
+        public const string Deactivate = "取消激活";
+        public const string Active = "已激活";
+        public const string Level = "等级";
+        public const string EachLevel = "每级";
+        public const string PassiveEffects = "熟练被动";
+        public const string LearnedDivineArts = "已学神通";
+        public const string ActiveDivineArt = "当前神通";
+        public const string NoDivineArts = "尚未习得任何神通。可在学习面板研读神通卷轴。";
+        public const string MpCost = "耗灵";
+        public const string Cooldown = "冷却";
+        public const string TriggerRate = "触发率";
+        public const string EquippedSlots = "已装备";
+        public const string EquippableItems = "可装备";
+        public const string Unequip = "卸下";
+        public const string Equip = "装备";
+        public const string EmptySlotLabel = "空槽位";
+        public const string InventoryEmpty = "空空如也。";
+        public const string Use = "使用";
+        public const string Drop = "丢弃";
+        public const string Usable = "可使用";
+        public const string ProgressTitle = "参悟进度";
+        public const string InsightPoints = "悟道点";
+        public const string ComprehensionExp = "悟性经验";
+        public const string Contemplate = "参悟道痕";
+        public const string TriggerInsight = "强行顿悟";
+        public const string ActiveBuffs = "当前感悟";
+        public const string NoBuffs = "暂无感悟加持";
+        public const string Insights = "道痕";
+        public const string CurrentStudy = "当前研读";
+        public const string ScrollList = "卷轴列表";
+        public const string NoActiveStudy = "当前没有研读任务";
+        public const string NoScrolls = "背包中没有可研读卷轴";
+        public const string StartStudy = "开始研读";
+        public const string AdvanceStudy = "研读一月";
+        public const string CancelStudy = "放弃研读";
+        public const string Remaining = "剩余";
+        public const string Count = "数量";
+        public const string Category = "类别";
+        public const string Rarity = "品阶";
+        public const string Description = "描述";
+        public const string Stats = "属性";
+        public const string Requirement = "需求";
+        public const string LogCultivate = "静坐吐纳，修为有所精进。";
+        public const string LogRest = "调息休整，精力与体魄渐复。";
+        public const string LogBodyCultivate = "搬运气血，体修修为有所增长。";
+        public const string LogStudyTick = "潜心研读，卷轴进度推进一月。";
+        public const string LogStudyCancel = "已放弃当前研读。";
+        public const string LogTechniqueActivated = "功法已切换。";
+        public const string LogDivineArtActivated = "神通已切换。";
+        public const string LogItemUsed = "物品已使用。";
+        public const string LogItemDropped = "物品已丢弃。";
+        public const string OperationFailed = "操作未生效。";
+        public const string NoAvailableRecipes = "暂无可用配方。";
+        public const string NoAvailableSmithingRecipes = "暂无可用炼器配方。";
+        public const string LearnedRecipeHint = "可在学习面板研读丹方或图谱来解锁更多配方。";
+        public const string RecipeList = "配方列表";
+        public const string SmithingRecipeList = "炼器图谱";
+        public const string Materials = "材料";
+        public const string Output = "产物";
+        public const string SuccessRate = "成功率";
+        public const string MentalCost = "念力消耗";
+        public const string GoldCost = "灵石消耗";
+        public const string BrewAlchemy = "开炉炼丹";
+        public const string ForgeSmithing = "开炉炼器";
+        public const string Buy = "买入";
+        public const string Sell = "卖出";
+        public const string ShopBuyList = "商店货架";
+        public const string ShopSellList = "背包可售";
+        public const string MerchantAbsent = "商人还没到。";
+        public const string EmptyBagShort = "背包空空。";
+        public const string UnitPrice = "单价";
+        public const string OriginalPrice = "原价";
+        public const string SellPrice = "卖价";
+        public const string Stock = "库存";
+        public const string AuctionIntro = "竞拍珍宝或寄售物品，拍卖会每隔数月刷新。";
+        public const string AuctionLots = "当前拍品";
+        public const string AuctionConsignments = "寄售中";
+        public const string AuctionHistory = "拍卖记录";
+        public const string EmptyAuctionLots = "暂无拍品。";
+        public const string EmptyAuctionConsignments = "暂无寄售。";
+        public const string EmptyAuctionHistory = "暂无记录。";
+        public const string RefreshAuction = "刷新拍卖";
+        public const string SettleAuction = "结算拍卖";
+        public const string Bid = "出价";
+        public const string Consign = "寄售";
+        public const string BasePrice = "底价";
+        public const string CurrentBid = "当前价";
+        public const string HighestBidder = "最高出价";
+        public const string TimeLeft = "剩余";
+        public const string AskPrice = "标价";
+        public const string PlayerBidder = "你";
+        public const string NoBidder = "无人";
+        public const string MiningIntro = "寻访灵脉，消耗精力与时间采集矿材。";
+        public const string MiningSummary = "采矿总览";
+        public const string AvailableMiningSites = "可采矿脉";
+        public const string EmptyMiningSites = "当前区域暂无可采矿脉。";
+        public const string Mine = "采矿";
+        public const string FengShui = "风水";
+        public const string MinRealm = "最低境界";
+        public const string Cost = "消耗";
+        public const string LastMiningSite = "上次矿脉";
+        public const string CurrentRegion = "当前位置";
+        public const string WorldRegions = "世界区域";
+        public const string Travel = "前往";
+        public const string Here = "您在这里";
+        public const string SafeZone = "安全区";
+        public const string LockedReason = "未解锁";
+        public const string RegionTags = "区域标签";
+        public const string ActiveQuests = "进行中";
+        public const string DiscoveredQuests = "已发现";
+        public const string CompletedQuests = "已完成";
+        public const string TrackedQuest = "追踪任务";
+        public const string NoActiveQuests = "暂无进行中的任务。";
+        public const string NoDiscoveredQuests = "暂无新任务。";
+        public const string NoCompletedQuests = "尚未完成任务。";
+        public const string AcceptQuest = "接受";
+        public const string TrackQuest = "追踪";
+        public const string UntrackQuest = "取消追踪";
+        public const string DeliverItem = "交付";
+        public const string TurnInQuest = "领取奖励";
+        public const string PendingTurnIn = "待交付";
+        public const string Objectives = "目标";
+        public const string Rewards = "奖励";
+        public const string Step = "阶段";
+        public const string CompletedAt = "完成时间";
+        public const string RegionNpcs = "当前区域";
+        public const string Contacts = "人脉总览";
+        public const string NoRegionNpcs = "当前区域无 NPC。";
+        public const string NoContacts = "尚未邂逅任何人。";
+        public const string MeetNpc = "邂逅";
+        public const string ChatNpc = "攀谈";
+        public const string GiftNpc = "赠礼";
+        public const string Relation = "关系";
+        public const string Affinity = "好感";
+        public const string Role = "身份";
+        public const string Personality = "性情";
+        public const string Disposition = "立场";
+        public const string HomeRegion = "故乡";
+        public const string QuestsAtNpc = "相关任务";
+        public const string Available = "可接";
+        public const string CanTurnIn = "可交付";
+        public const string SectIntro = "加入门派，完成宗门任务获取贡献与俸禄。";
+        public const string JoinSect = "加入门派";
+        public const string Membership = "宗门身份";
+        public const string SectBenefits = "宗门福利";
+        public const string SectMissions = "宗门任务";
+        public const string SectStore = "宗门商店";
+        public const string NoSects = "暂无可加入门派。";
+        public const string NoMissions = "暂无宗门任务。";
+        public const string NoSectStore = "暂无宗门兑换。";
+        public const string ClaimStipend = "领取俸禄";
+        public const string DoMission = "执行任务";
+        public const string SectStipendClaimed = "已领取本年俸禄";
+        public const string SectManagementUnavailable = "宗门经营数据尚未接入 Unity 版，当前显示核心成员/贡献/任务。";
+        public const string Contribution = "贡献";
+        public const string TotalContribution = "累计贡献";
+        public const string EntryGold = "入门费";
+        public const string Rank = "品级";
+        public const string SectRank = "职位";
+        public const string SecretRealmIntro = "探索秘境，逐层应对机缘、陷阱与妖兽。";
+        public const string ActiveSecretRealm = "当前探索";
+        public const string AvailableSecretRealms = "可探索秘境";
+        public const string SecretRealmHistory = "探索记录";
+        public const string NoSecretRealms = "当前区域暂无可进入秘境。";
+        public const string EnterSecretRealm = "进入秘境";
+        public const string AdvanceSecretRealm = "继续探索";
+        public const string FinishSecretRealm = "结算秘境";
+        public const string Stage = "阶段";
+        public const string Runs = "通关次数";
+        public const string BountyIntro = "查看悬赏榜，接受委托并领取声望与奖励。";
+        public const string BountyReputation = "悬赏声望";
+        public const string RefreshBounty = "刷新悬赏";
+        public const string ActiveBounties = "进行中悬赏";
+        public const string AvailableBounties = "可接悬赏";
+        public const string NoActiveBounties = "暂无进行中的悬赏。";
+        public const string NoAvailableBounties = "暂无可接悬赏。";
+        public const string Issuer = "发布者";
+        public const string ExpiresAt = "截止";
+        public const string Progress = "进度";
+        public const string AcceptBounty = "接受悬赏";
+        public const string ClaimBounty = "领取赏金";
+        public const string BountyRefreshed = "悬赏榜已刷新";
+        public const string CompanionIntro = "Unity 版尚未拥有独立道侣/双修系统；此处根据 NPC 关系展示潜在道侣候选。";
+        public const string CurrentCompanion = "当前道侣";
+        public const string CompanionCandidates = "候选人";
+        public const string NoCompanion = "尚未结成道侣。";
+        public const string NoCompanionCandidates = "暂无满足好感条件的候选人。";
+        public const string CompanionRequirement = "候选条件：已邂逅且好感达到挚友。";
+        public const string AchievementProgress = "成就进度";
+        public const string AchievementList = "成就列表";
+        public const string AchievementBonusSummary = "永久加成合计";
+        public const string NoAchievementBonus = "暂无永久加成";
+        public const string CheckAchievements = "检查成就";
+        public const string ChronicleSummary = "本世摘要";
+        public const string ChronicleTimeline = "关键事件";
+        public const string ChronicleStart = "修仙之路，从此启程。";
+        public const string NoChronicleEvents = "尚无关键事件记录。";
+        public const string Deaths = "死亡";
+        public const string Revives = "复活";
+        public const string Outcome = "结局";
+        public const string RankingIntro = "刷新并查看各榜单排名，玩家条目会以当前状态参与排行。";
+        public const string RefreshRanking = "刷新排行";
+        public const string RankingRefreshed = "排行已刷新";
+        public const string RankingBoard = "榜单";
+        public const string PlayerRank = "玩家排名";
+        public const string Score = "分数";
+        public const string Source = "来源";
+        public const string RefreshedAt = "刷新时间";
+        public const string PvpIntro = "挑战战力相近的修士，胜利可获得修为、灵石与评分。";
+        public const string PvpSummary = "论道总览";
+        public const string Opponents = "对手";
+        public const string PvpHistory = "论道记录";
+        public const string Rating = "评分";
+        public const string Record = "战绩";
+        public const string Ready = "可挑战";
+        public const string Challenge = "挑战";
+        public const string NoOpponents = "暂无可挑战对手。";
+        public const string NoPvpHistory = "暂无论道记录。";
+        public const string HeartDemonIntro = "心魔会削弱修行与突破，压制或直面皆需谨慎。";
+        public const string HeartDemonValue = "心魔值";
+        public const string SuppressHeartDemon = "压制心魔";
+        public const string ConfrontHeartDemon = "直面心魔";
+        public const string HeartDemonEffects = "当前影响";
+        public const string HeartDemonHistory = "心魔记录";
+        public const string NoHeartDemonDebuff = "暂无心魔负面状态。";
+        public const string NoHeartDemonHistory = "暂无心魔记录。";
+        public const string Conquered = "战胜";
+        public const string Failed = "失败";
+        public const string NeedMoreMentalPower = "念力不足";
+        public const int HeartDemonSuppressCostValue = 12;
 
         public static string SlotTitle(int slot) => $"{Slot} {slot}";
         public static string SlotPreview(SaveSlotPreview p) => p == null || p.IsEmpty ? EmptySlot : $"{p.Name}｜第{p.GameYear}年{p.GameMonth}月｜境界 {p.RealmIndex}";
@@ -73,8 +386,175 @@ namespace Xiuxian.App
         public static string LogSaved(int slot) => $"已保存至存档槽 {slot}。";
         public static string PanelPlaceholder(string title) => $"{title}：{PlaceholderBody}";
         public static string AgeYears(int months) => $"{months / 12}{AgeUnit}";
+        public static string AgeMonths(int months) => $"{months / 12}{AgeUnit}{months % 12}{MonthUnit}";
         public static string RootSummary(PlayerSpiritRoots roots) => roots == null || roots.Roots.Count == 0 ? "无灵根" : string.Join("、", roots.Roots.ConvertAll(r => RootName(r.Type) + r.Affinity));
-        public static string RootName(string type) => type switch { "metal" => "金", "wood" => "木", "water" => "水", "fire" => "火", "earth" => "土", _ => type };
+        public static string RootName(string type) => type switch { "metal" => "金", "wood" => "木", "water" => "水", "fire" => "火", "earth" => "土", "thunder" => "雷", "wind" => "风", _ => type };
+        public static string ElementName(string type) => RootName(type);
         public static string GenderLabel(string gender) => gender == "female" ? Female : Male;
+        public static string HudNameRealm(string name, string realm) => $"{name}【{realm}】";
+        public static string StatValue(string label, object value) => $"{label} {value}";
+        public static string StatCurrentMax(string label, int current, int max) => $"{label} {current}/{max}";
+        public static string CurrentMax(int current, int max) => $"{current}/{max}";
+        public static string Percent(double value) => $"{value:0.#}%";
+        public static string Multiplier(double value) => $"×{value:0.##}";
+        public static string Bracket(string value) => $"【{value}】";
+        public static string RealmNeed(string realm) => $"需 {realm}";
+        public static string LevelText(int level, int max) => $"Lv.{level}/{max}";
+        public static string ExpText(int exp, int req) => $"{exp}/{req}";
+        public static string CostText(string label, int value) => $"{label}：{value}";
+        public static string CountText(int count) => $"×{count}";
+        public static string Points(int points) => $"{TalentPoints}：{points}";
+        public static string InsightPointText(int points) => $"{InsightPoints}：{points}";
+        public static string ProgressMonths(int current, int total) => $"{current}/{total} 月";
+        public static string RemainingMonths(int months) => $"{Remaining} {months} 月";
+        public static string StudyTarget(string target) => $"《{target}》";
+        public static string LearnedCount(int learned, int total) => $"{learned}/{total}";
+        public static string ActiveName(string name) => $"{Active}：{name}";
+        public static string CultivateGain(int gain) => $"修为 +{gain}";
+        public static string BodyGain(int gain) => $"体修修为 +{gain}";
+        public static string RecipeOutput(string name, int count) => $"→ {name} ×{count}";
+        public static string ItemCount(string name, int count) => $"{name} ×{count}";
+        public static string HaveNeed(int have, int need) => $"{have}/{need}";
+        public static string TimeLeftMonths(int months) => $"{TimeLeft} {months} 月";
+        public static string TravelCost(int stamina, int months) => $"{stamina} 精力 / {months} 月";
+        public static string MiningTotal(int count, int fengShui) => $"已采 {count} 次，累计风水 {fengShui}";
+        public static string SectionCountLabel(string label, int count) => $"{label}（{count}）";
+        public static string QuestPendingTurnIn(string npcName) => $"请前往 {npcName} 交付任务。";
+        public static string CompletedAtMonths(int months) => $"第 {months / 12 + 1} 年 {months % 12 + 1} 月";
+        public static string RegionMinRealm(string qi, string body) => string.IsNullOrEmpty(body) ? $"需 {qi}" : $"需 {qi} / {body}";
+        public static string LogOperation(string panel, string message) => $"{panel}：{message}";
+        public static string ContributionText(int current, int total) => $"{current}/{total}";
+        public static string CooldownMonths(int months) => months <= 0 ? Ready : $"{Cooldown} {months} 月";
+        public static string StageText(int current, int total) => $"{current}/{total}";
+        public static string CompletedRuns(int count) => $"{count} 次";
+        public static string ExpiresAtMonths(int age) => $"第 {age / 12 + 1} 年 {age % 12 + 1} 月";
+        public static string BountyProgress(int current, int total) => $"{current}/{total}";
+        public static string AchievementUnlocked(string ids) => $"已解锁 {ids}";
+        public static string ChronicleStats(int kills, int deaths, int revives) => $"{Kills} {kills} · {Deaths} {deaths} · {Revives} {revives}";
+        public static string RankPrefix(int rank) => $"第 {rank} 名";
+        public static string PlayerRankText(int? rank) => rank.HasValue ? RankPrefix(rank.Value) : "未上榜";
+        public static string ScoreText(int score) => $"{Score} {score}";
+        public static string RefreshedAtText(int year, int month) => $"第 {year} 年 {month} 月";
+        public static string PvpRating(int rating) => $"{Rating} {rating}";
+        public static string PvpRecord(int wins, int losses) => $"{Record} {wins}胜/{losses}负";
+        public static string PvpReward(int exp, int gold) => $"奖励 修为+{exp} / 灵石+{gold}";
+        public static string PvpResult(string result) => result == "player" ? "论道获胜" : result == "draw" ? "平局收场" : result == "cooldown" ? "尚在冷却" : result == "invalidOpponent" ? "对手无效" : "论道失利";
+        public static string HeartDemonValueLine(int value, int max) => $"{value}/{max}";
+        public static string HeartDemonSuppressCost() => $"{MentalCost}：{HeartDemonSuppressCostValue}";
+        public static string HeartDemonSuppressResult(int amount, int value) => $"压制 {amount}，当前 {value}";
+        public static string HeartDemonBattleResult(string result) => result == "player" ? "战胜心魔" : result == "draw" ? "心魔僵持" : "心魔反噬";
+        public static string HeartDemonState(int value) => value >= 90 ? "心魔劫临近" : value >= 70 ? "危机四伏" : value >= 40 ? "心绪翻涌" : "道心澄明";
+        public static string HeartDemonDebuffLine(string name, int months) => $"{name}：剩余 {months} 月";
+        public static string HeartDemonHistoryLine(int age, string source, string outcome, int value) => $"{CompletedAtMonths(age)} {HeartDemonSource(source)} / {HeartDemonOutcome(outcome)}：{value}";
+        public static string HeartDemonSuppressed => "心魔已在压制中";
+        public static string RankingDimensionName(string id) => id switch { "core:realm_progress" => "境界进度", "core:combat_power" => "战力榜", "core:wealth" => "财富榜", "core:reputation" => "声望榜", "core:technique_mastery" => "功法造诣", "core:heaven_chosen" => "天骄榜", "core:prodigy" => "潜龙榜", _ => id ?? Unknown };
+        public static string RankingBoardName(string board) => board == "celestial" ? "天榜" : "风云榜";
+        public static string RankingSourceName(string source) => source == "player" ? "玩家" : source == "npc" ? "修士" : source ?? Unknown;
+        public static string AchievementName(string id) => id switch { "core:first_blood" => "初战告捷", "core:qi_condensation" => "炼气入门", "core:first_gold" => "小有积蓄", "core:technique_scholar" => "博览功法", _ => id ?? Unknown };
+        public static string AchievementDescription(string id) => id switch { "core:first_blood" => "首次击败敌人。", "core:qi_condensation" => "突破至炼气境。", "core:first_gold" => "积累一百灵石。", "core:technique_scholar" => "习得三门功法。", _ => Unknown };
+        public static string ChronicleEventTypeName(string type) => type switch { "realm_breakthrough" => "境界突破", "body_realm_breakthrough" => "体修突破", "tribulation_pass" => "渡劫成功", "tribulation_fail" => "渡劫失败", "death" => "身陨", "revival" => "复活", "reincarnation" => "转世", "achievement_unlocked" => "成就", "game_over" => "结局", _ => type ?? Unknown };
+        public static string SectLog(string key) => WorldSystemLog(key);
+        public static string SecretRealmLog(string key) => key switch { "treasure" => "发现秘宝", "trap" => "遭遇机关", "rest" => "灵泉调息", "combatWin" => "战斗获胜", "combatLose" => "战斗失利", _ => WorldSystemLog(key) };
+        public static string BountyLog(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return OperationFailed;
+            if (key.StartsWith("accepted:", StringComparison.Ordinal)) return $"已接受悬赏 {key.Substring("accepted:".Length)}";
+            return WorldSystemLog(key);
+        }
+        public static string WorldSystemLog(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return OperationFailed;
+            if (key.StartsWith("joined:", StringComparison.Ordinal)) return $"已加入 {key.Substring("joined:".Length)}";
+            if (key.StartsWith("started:", StringComparison.Ordinal)) return $"已进入 {key.Substring("started:".Length)}";
+            if (key.StartsWith("exp+", StringComparison.Ordinal)) return $"{Cultivation} +{key.Substring("exp+".Length)}";
+            if (key.StartsWith("gold+", StringComparison.Ordinal)) return $"{Gold} +{key.Substring("gold+".Length)}";
+            if (key.StartsWith("item:", StringComparison.Ordinal)) return $"获得物品 {key.Substring("item:".Length)}";
+            if (key.StartsWith("karma", StringComparison.Ordinal)) return $"{Karma} {key.Substring("karma".Length)}";
+            if (key.StartsWith("contribution+", StringComparison.Ordinal)) return $"{Contribution} +{key.Substring("contribution+".Length)}";
+            if (key.StartsWith("reputation+", StringComparison.Ordinal)) return $"{BountyReputation} +{key.Substring("reputation+".Length)}";
+            if (key == "realm") return "境界不足";
+            if (key == "gold") return "灵石不足";
+            if (key == "karma") return "业力条件不足";
+            if (key == "cost") return "消耗不足";
+            if (key == "cooldown") return "尚在冷却";
+            if (key == "region") return "不在对应区域";
+            if (key == "notFound" || key == "sectNotFound") return "目标不存在";
+            if (key == "alreadyJoined") return "已有门派";
+            if (key == "notJoined") return "尚未加入门派";
+            if (key == "kill_monster") return "讨伐妖兽";
+            if (key == "reach_region") return "抵达区域";
+            if (key == "collect_item") return "收集物品";
+            return WorldActionMessage(key);
+        }
+        public static string HeartDemonSource(string source) => source == "suppress" ? "压制" : source ?? Unknown;
+        public static string HeartDemonOutcome(string outcome) => outcome switch { "gain" => "增长", "suppress" => "压制", "player" => "战胜", "enemy" => "失败", _ => outcome ?? Unknown };
+        public static string RelationName(string level) => level switch { "hostile" => "敌对", "cold" => "冷淡", "stranger" => "陌生", "acquaintance" => "相识", "friend" => "好友", "close_friend" => "挚友", "soulmate" => "知己", _ => level ?? Unknown };
+        public static string FengShuiGrade(string grade) => grade switch { "excellent" => "极佳", "good" => "上佳", "normal" => "平稳", "poor" => "贫瘠", "bad" => "凶煞", _ => grade ?? Unknown };
+        public static string WorldActionMessage(string key) => key switch
+        {
+            "regionNotFound" => "区域不存在",
+            "containerRegion" => "此处为区域分类，无法直接前往",
+            "alreadyHere" => "已在此地",
+            "realmInsufficient" => "境界不足",
+            "staminaInsufficient" => "精力不足",
+            "arrived" => "已抵达",
+            "npcNotFound" => "未找到此人",
+            "alreadyMet" => "已经邂逅",
+            "met" => "初次邂逅",
+            "affinityChanged" => "好感变化",
+            "gift" => "赠礼完成",
+            "notMet" => "尚未邂逅",
+            "giftCooldown" => "赠礼尚在冷却",
+            "itemMissing" => "物品不足",
+            _ => key ?? OperationFailed,
+        };
+        public static string AuctionLog(string key) => key switch
+        {
+            "refreshed" => "拍卖会已刷新",
+            "playerBid" => "你参与竞拍",
+            "aiOutbid" => "他人加价超过了你",
+            "playerLeading" => "你暂时领先",
+            "consigned" => "物品已寄售",
+            "winLot" => "拍品已成交并收入背包",
+            "refundBid" => "竞拍未中，押金已退回",
+            "consignmentSold" => "寄售成交",
+            "consignmentReturned" => "寄售流拍，物品退回",
+            _ => WorldActionMessage(key),
+        };
+        public static string QuestLog(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return OperationFailed;
+            if (key.StartsWith("accepted:", StringComparison.Ordinal)) return $"已接受任务 {key.Substring("accepted:".Length)}";
+            if (key.StartsWith("discovered:", StringComparison.Ordinal)) return $"发现任务 {key.Substring("discovered:".Length)}";
+            if (key.StartsWith("delivered:", StringComparison.Ordinal)) return $"已交付 {key.Substring("delivered:".Length)}";
+            if (key.StartsWith("completed:", StringComparison.Ordinal)) return $"已完成任务 {key.Substring("completed:".Length)}";
+            if (key.StartsWith("exp+", StringComparison.Ordinal)) return $"{Cultivation} +{key.Substring("exp+".Length)}";
+            if (key.StartsWith("gold+", StringComparison.Ordinal)) return $"{Gold} +{key.Substring("gold+".Length)}";
+            if (key.StartsWith("item:", StringComparison.Ordinal)) return $"获得物品 {key.Substring("item:".Length)}";
+            if (key.StartsWith("karma", StringComparison.Ordinal)) return $"{Karma} {key.Substring("karma".Length)}";
+            return key;
+        }
+        public static string BreakthroughTarget(string name, double rate) => $"突破至 {name}（{Percent(rate * 100)}）";
+        public static string BodyBreakthroughTarget(string name) => $"体修突破至 {name}";
+        public static string StatBonus(string label, object value) => $"{label}+{value}";
+        public static string EffectLine(string label, object value) => $"{label} {value}";
+        public static string EffectDuration(int months) => $"持续 {months} 月";
+        public static string SectionCount(string label, int count) => $"{label}（{count}）";
+        public static string EquipmentSlotName(string slot) => slot switch { "weapon" => "武器", "helmet" => "头盔", "armor" => "护甲", "boots" => "靴履", "accessory1" => "饰品一", "accessory2" => "饰品二", _ => slot };
+        public static string CategoryName(string category) => category switch { "weapon" => "武器", "armor" => "防具", "accessory" => "饰品", "pill" => "丹药", "material" => "材料", "scroll" => "卷轴", "quest" => "任务物品", _ => category ?? Unknown };
+        public static string RarityName(string rarity) => rarity switch { "common" => "凡品", "uncommon" => "灵品", "rare" => "地品", "epic" => "天品", "legendary" => "仙品", _ => rarity ?? Unknown };
+        public static string TechniqueTypeName(string type) => type switch { "sword" => "剑法", "blade" => "刀法", "spear" => "枪法", "fist" => "拳法", "palm" => "掌法", "finger" => "指法", _ => type ?? Unknown };
+        public static string AlignmentName(string alignment) => alignment switch { "righteous" => "正道", "evil" => "魔道", "neutral" => "中立", "any" => "任意", _ => alignment ?? Unknown };
+        public static string ScrollTypeName(string type) => type switch { "technique" => "功法", "divineArt" => "神通", "recipe" => "丹方", "smithingRecipe" => "炼器图谱", _ => type ?? Unknown };
+        public static string StatName(string key) => key switch { "hp" or "maxHp" => Hp, "mp" or "maxMp" => Mp, "stamina" or "maxStamina" => Stamina, "mentalPower" or "maxMentalPower" => MentalPower, "atk" => Atk, "def" => Def, "speed" => Speed, "moveSpeed" => MoveSpeed, "critRate" => CritRate, "critDmgMultiplier" => CritDmg, "critResist" => CritResist, "luck" => Luck, "comprehension" => Comprehension, "charisma" => Charisma, "lifespan" => Lifespan, "physique" or "maxPhysique" => Physique, "physiqueDmgReduce" => DamageReduce, _ => key ?? Unknown };
+        public static string FormatStats(Dictionary<string, double> stats) => stats == null || stats.Count == 0 ? None : string.Join("，", stats.Select(kv => StatBonus(StatName(kv.Key), kv.Value)));
+        public static IEnumerable<string> DescribeEffect(StatEffect effect)
+        {
+            if (effect == null) yield break;
+            foreach (var kv in effect.StatBonuses) yield return StatBonus(StatName(kv.Key), kv.Value);
+            foreach (var kv in effect.StatMultipliers) yield return $"{StatName(kv.Key)} +{Percent(kv.Value * 100)}";
+            if (Math.Abs(effect.CultivationSpeedBonus) > 0.0001) yield return $"修炼速度 +{Percent(effect.CultivationSpeedBonus * 100)}";
+            if (Math.Abs(effect.BreakthroughRateBonus) > 0.0001) yield return $"突破率 +{Percent(effect.BreakthroughRateBonus * 100)}";
+        }
     }
 }

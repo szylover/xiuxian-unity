@@ -23,7 +23,7 @@
 
 ## 阶段 3 — uGUI 表现层
 - [x] 主场景 + 启动/角色创建/DLC 选择 + HUD + 面板容器/导航（#9，运行时 uGUI shell + Main.unity bootstrap）
-- [ ] 复刻 27 个面板（功能对齐网页版）
+- [x] 复刻 27 个面板（功能对齐网页版，#10）
 - [x] 状态→UI 事件刷新机制（#11，Core typed event bus + HUD/panel refresh hook + LogicTests 覆盖）
 
 ## 阶段 4 — 表现力升级（核心增量）

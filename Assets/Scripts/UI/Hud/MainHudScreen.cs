@@ -14,6 +14,7 @@ namespace Xiuxian.UI
     public sealed class MainHudScreen : UiScreen
     {
         private readonly Dictionary<PanelId, IPanel> panels = new();
+        private IReadOnlyList<PanelCategory> categories;
         private Transform panelHost;
         private TMP_Text logText;
         private TMP_Text nameRealmText;
@@ -22,11 +23,11 @@ namespace Xiuxian.UI
         private TMP_Text staminaText;
         private TMP_Text goldText;
         private TMP_Text ageText;
-        private PanelId activePanel = PanelId.Cultivation;
+        private PanelId activePanel = PanelId.Status;
 
         protected override void Build()
         {
-            RegisterPlaceholders();
+            RegisterPanels();
             var root = UIBuilder.Panel(transform, "HudRoot", new Color(0.035f, 0.028f, 0.022f, 1f));
             UIBuilder.Stretch(root.GetComponent<RectTransform>());
             UIBuilder.Vertical(root, 8, 8);
@@ -80,22 +81,28 @@ namespace Xiuxian.UI
             var p = Context.CurrentPlayer;
             if (p == null || nameRealmText == null) return;
             var realm = Context.Database.Realms.TryGetValue(p.RealmIndex, out var r) ? r.Name : UiTexts.RealmUnknown;
-            nameRealmText.text = $"{p.Name}【{realm}】";
-            hpText.text = $"{UiTexts.Hp} {p.Hp}/{p.MaxHp}";
-            mpText.text = $"{UiTexts.Mp} {p.Mp}/{p.MaxMp}";
-            staminaText.text = $"{UiTexts.Stamina} {p.Stamina}/{p.MaxStamina}";
-            goldText.text = $"{UiTexts.Gold} {p.Gold}";
-            ageText.text = $"{UiTexts.Age} {UiTexts.AgeYears(p.Age)}";
+            nameRealmText.text = UiTexts.HudNameRealm(p.Name, realm);
+            hpText.text = UiTexts.StatCurrentMax(UiTexts.Hp, p.Hp, p.MaxHp);
+            mpText.text = UiTexts.StatCurrentMax(UiTexts.Mp, p.Mp, p.MaxMp);
+            staminaText.text = UiTexts.StatCurrentMax(UiTexts.Stamina, p.Stamina, p.MaxStamina);
+            goldText.text = UiTexts.StatValue(UiTexts.Gold, p.Gold);
+            ageText.text = UiTexts.StatValue(UiTexts.Age, UiTexts.AgeYears(p.Age));
         }
 
         private void BuildNavigation(Transform parent)
         {
-            UIBuilder.Vertical(parent.gameObject, 14, 8);
-            foreach (var entry in panels)
+            UIBuilder.Vertical(parent.gameObject, 8, 8);
+            var content = UIBuilder.ScrollList(parent, "NavScroll");
+            UIBuilder.Layout(content.transform.parent.gameObject, flexibleHeight: 1);
+            foreach (var category in categories)
             {
-                var id = entry.Key;
-                var button = UIBuilder.Button(parent, entry.Value.Title, () => ShowPanel(id));
-                UIBuilder.Layout(button.gameObject, preferredHeight: 48);
+                UIBuilder.SectionHeader(content.transform, category.Title);
+                foreach (var panel in category.Panels)
+                {
+                    var id = panel.Id;
+                    var button = UIBuilder.Button(content.transform, panel.Title, () => ShowPanel(id));
+                    UIBuilder.Layout(button.gameObject, preferredHeight: 44);
+                }
             }
         }
 
@@ -116,27 +123,18 @@ namespace Xiuxian.UI
             logText.text = Context.LogEntries.Count == 0 ? UiTexts.NoLog : string.Join("\n", Context.LogEntries);
         }
 
-        private void RegisterPlaceholders()
+        private void RegisterPanels()
         {
             panels.Clear();
-            AddPanel(PanelId.Cultivation, UiTexts.Cultivation);
-            AddPanel(PanelId.Inventory, UiTexts.Inventory);
-            AddPanel(PanelId.Map, UiTexts.Map);
-            AddPanel(PanelId.Combat, UiTexts.Combat);
-            AddPanel(PanelId.Sect, UiTexts.Sect);
-            AddPanel(PanelId.Quests, UiTexts.Quests);
-            AddPanel(PanelId.Shop, UiTexts.Shop);
-            AddPanel(PanelId.Equipment, UiTexts.Equipment);
-            AddPanel(PanelId.Technique, UiTexts.Technique);
-            AddPanel(PanelId.Alchemy, UiTexts.Alchemy);
-            AddPanel(PanelId.World, UiTexts.World);
-            panels[PanelId.Save] = new SavePanel();
+            categories = PanelRegistry.GetCategories();
+            foreach (var category in categories)
+                foreach (var panel in category.Panels)
+                    panels[panel.Id] = panel;
         }
-
-        private void AddPanel(PanelId id, string title) => panels[id] = new PlaceholderPanel(id, title);
 
         private void ShowPanel(PanelId id)
         {
+            if (!panels.ContainsKey(id)) id = PanelId.Status;
             activePanel = id;
             for (var i = panelHost.childCount - 1; i >= 0; i--) Destroy(panelHost.GetChild(i).gameObject);
             panels[id].Build(panelHost, Context);
@@ -176,35 +174,6 @@ namespace Xiuxian.UI
         private void OnDestroy()
         {
             if (Context != null) Context.Bus.Unsubscribe(OnGameEvent);
-        }
-
-        private sealed class PlaceholderPanel : IPanel
-        {
-            public PanelId Id { get; }
-            public string Title { get; }
-            public PlaceholderPanel(PanelId id, string title) { Id = id; Title = title; }
-            public void Build(Transform parent, GameContext context)
-            {
-                UIBuilder.Vertical(parent.gameObject, 24, 16);
-                UIBuilder.Layout(UIBuilder.Label(parent, Title, 42).gameObject, preferredHeight: 76);
-                UIBuilder.Layout(UIBuilder.Label(parent, UiTexts.PanelPlaceholder(Title), 26, TextAlignmentOptions.Center).gameObject, preferredHeight: 140);
-            }
-
-            public void OnGameEvent(in GameEvent gameEvent) { }
-        }
-
-        private sealed class SavePanel : IPanel
-        {
-            public PanelId Id => PanelId.Save;
-            public string Title => UiTexts.Save;
-            public void Build(Transform parent, GameContext context)
-            {
-                UIBuilder.Vertical(parent.gameObject, 24, 16).childAlignment = TextAnchor.UpperCenter;
-                UIBuilder.Layout(UIBuilder.Label(parent, UiTexts.Save, 42).gameObject, preferredHeight: 76);
-                UIBuilder.Layout(UIBuilder.Button(parent, UiTexts.SaveNow, context.SaveCurrent).gameObject, preferredWidth: 280, preferredHeight: 64);
-            }
-
-            public void OnGameEvent(in GameEvent gameEvent) { }
         }
     }
 }

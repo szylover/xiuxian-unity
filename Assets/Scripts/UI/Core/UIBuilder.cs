@@ -58,6 +58,43 @@ namespace Xiuxian.UI
             return button;
         }
 
+        public static TMP_Text SectionHeader(Transform parent, string text)
+        {
+            var label = Label(parent, text, 30, TextAlignmentOptions.Left);
+            label.color = new Color(1f, 0.78f, 0.34f, 1f);
+            Layout(label.gameObject, preferredHeight: 42);
+            return label;
+        }
+
+        public static TMP_Text StatRow(Transform parent, string label, string value)
+        {
+            var row = Rect("StatRow", parent);
+            Horizontal(row, 4, 8).childAlignment = TextAnchor.MiddleLeft;
+            Layout(row, preferredHeight: 34);
+            var left = Label(row.transform, label, 22, TextAlignmentOptions.Left);
+            Layout(left.gameObject, preferredWidth: 210, preferredHeight: 32);
+            var right = Label(row.transform, value, 22, TextAlignmentOptions.Left);
+            right.color = new Color(0.98f, 0.92f, 0.76f, 1f);
+            Layout(right.gameObject, flexibleWidth: 1, preferredHeight: 32);
+            return right;
+        }
+
+        public static GameObject Card(Transform parent, string name = "Card")
+        {
+            var card = Panel(parent, name, new Color(0.10f, 0.075f, 0.052f, 0.92f));
+            Vertical(card, 12, 8);
+            Layout(card, flexibleWidth: 1);
+            return card;
+        }
+
+        public static Slider ProgressBar(Transform parent, float value, float max)
+        {
+            var slider = Slider(parent, Math.Max(0, value), 0, Math.Max(1, max));
+            slider.interactable = false;
+            Layout(slider.gameObject, preferredHeight: 18);
+            return slider;
+        }
+
         public static Toggle Toggle(Transform parent, string text, bool value, Action<bool> onChanged)
         {
             var row = Rect("Toggle", parent);
