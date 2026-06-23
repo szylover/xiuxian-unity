@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using Xiuxian.Core;
 using Xiuxian.Data;
 using Xiuxian.Systems;
@@ -77,6 +78,7 @@ namespace Xiuxian.LogicTests
             failures += ValidateCoreCultivationSystems(db);
             failures += ValidateCombatSystems(db);
             failures += ValidateEconomySystems(db);
+            failures += ValidateWorldSocialSystems(db);
 
             if (failures == 0)
             {
@@ -340,6 +342,79 @@ namespace Xiuxian.LogicTests
             failures += Expect("economy.mining.yields", mining.Yields.TryGetValue("core:iron_ore", out var ore) && ore == 3 && player.Stamina == 88 && MiningSystem.GetMiningState(player).MinedCount == 1);
 
             Console.WriteLine($"[OK] 经济摘要: pills={InventorySystem.CountItem(player, "core:hp_pill")}, gold={player.Gold}, auctionLot={lot.ItemId}x{lot.Count}, minedOre={ore}, slots={InventorySystem.GetUsedSlots(player)}");
+            return failures;
+        }
+
+        private static int ValidateWorldSocialSystems(GameDatabase db)
+        {
+            int failures = 0;
+            var player = PlayerFactory.CreatePlayer(db, new CreatePlayerOptions { Name = "World", Gender = "female", Appearance = 2 }, new SystemRandomRng(31));
+            player.Gold = 500;
+            player.Stamina = player.MaxStamina = 200;
+            player.InventoryCapacity = 50;
+
+            db.Events["test:eligible_daily"] = new GameEventDef { Id = "test:eligible_daily", Category = "test", Tone = "good", Name = "eligible", Weight = 1, Effects = new Dictionary<string, EffectValue> { ["gold"] = EffectValue.FromScalar(10) }, Message = "eligible", Condition = JObject.FromObject(new { minRealm = 0 }) };
+            db.Events["test:gated_daily"] = new GameEventDef { Id = "test:gated_daily", Category = "test", Tone = "good", Name = "gated", Weight = 999, Effects = new Dictionary<string, EffectValue> { ["gold"] = EffectValue.FromScalar(999) }, Message = "gated", Condition = JObject.FromObject(new { minRealm = 99 }) };
+            int goldBeforeEvent = player.Gold;
+            var available = EventSystem.GetAvailableEvents(db, player, "test");
+            var ev = EventSystem.TriggerEvent(db, player, "test", new FixedRng(0));
+            failures += Expect("world.event.gatedExcluded", available.Any(e => e.Id == "test:eligible_daily") && available.All(e => e.Id != "test:gated_daily"));
+            failures += Expect("world.event.applyEffect", ev != null && ev.EventId == "test:eligible_daily" && player.Gold == goldBeforeEvent + 10);
+
+            var meet = NpcSystem.MeetNpc(db, player, "core:npc_qingyun_elder");
+            var dlgStart = DialogueSystem.StartDialogue(db, player, "core:dlg_elder_first_meet");
+            int pillsBeforeDialogue = InventorySystem.CountItem(player, "core:hp_pill");
+            var dlgChoice = DialogueSystem.SelectChoice(db, player, "core:dlg_elder_first_meet", "n1", "c1");
+            failures += Expect("world.dialogue.branchEffect", dlgStart.Node != null && dlgChoice.Node != null && NpcSystem.GetRelation(player, "core:npc_qingyun_elder").Affinity >= 10 && InventorySystem.CountItem(player, "core:hp_pill") == pillsBeforeDialogue + 2);
+            failures += Expect("world.npc.relation", meet.Success && NpcSystem.ChangeAffinity(db, player, "core:npc_qingyun_elder", 3).AffinityChange == 3);
+
+            player.RealmIndex = 1;
+            PlayerStatsSystem.RecalcStats(db, player);
+            player.Stamina = player.MaxStamina;
+            var travel = MapSystem.TravelTo(db, player, "core:beast_mountain");
+            failures += Expect("world.map.travel", travel.Success && MapSystem.GetMapState(db, player).CurrentRegionId == "core:beast_mountain");
+
+            var discover = QuestSystem.CheckQuestDiscovery(db, player, new QuestTrigger { Type = "talk_npc", NpcId = "core:npc_beast_hunter" });
+            var accept = QuestSystem.AcceptQuest(db, player, "core:quest_wolf_bounty");
+            int goldBeforeQuest = player.Gold;
+            for (int i = 0; i < 5; i++) QuestSystem.TickQuestObjectives(db, player, new QuestTrigger { Type = "kill_monster", MonsterId = "core:wild_wolf" });
+            var turnIn = QuestSystem.TurnInQuest(db, player, "core:quest_wolf_bounty");
+            failures += Expect("world.quest.completeReward", discover.Logs.Count > 0 && accept.Success && turnIn.Success && QuestSystem.GetQuestState(player).CompletedQuests.ContainsKey("core:quest_wolf_bounty") && player.Gold > goldBeforeQuest);
+
+            player.Gold = 500;
+            player.Stamina = player.MaxStamina = 200;
+            var join = SectSystem.JoinSect(db, player, "core:qingyun_sect");
+            var mission = SectSystem.CompleteSectMission(db, player, "qingyun_patrol");
+            failures += Expect("world.sect.joinContribution", join.Success && mission.Success && SectSystem.GetSectState(player).Contribution >= 25);
+
+            player.RealmIndex = 6;
+            PlayerStatsSystem.RecalcStats(db, player);
+            player.Hp = player.MaxHp;
+            player.Mp = player.MaxMp;
+            player.Stamina = player.MaxStamina = 300;
+            player.Gold = 1000;
+            MapSystem.GetMapState(db, player).CurrentRegionId = "core:desolate_waste";
+            int expBeforeRealm = player.Exp;
+            var realmRun = SecretRealmSystem.RunToEnd(db, player, "core:waste_sand_palace", new FixedRng(0.1));
+            failures += Expect("world.secretRealm.completeReward", realmRun.Success && player.Exp > expBeforeRealm && SecretRealmSystem.GetSecretRealmState(player).CompletedRuns.ContainsKey("core:waste_sand_palace"));
+
+            MapSystem.GetMapState(db, player).CurrentRegionId = "core:qingyun_town";
+            BountySystem.EnsureBountyBoard(db, player, new FixedRng(0), true);
+            var bounty = BountySystem.GetBountyState(player).Available.First();
+            var bountyAccept = BountySystem.AcceptBounty(db, player, bounty.Id, new FixedRng(0));
+            var obj = bounty.Objective;
+            string objectiveType = obj.Value<string>("type");
+            string target = obj.Value<string>("targetId");
+            int count = obj.Value<int?>("count") ?? 1;
+            if (objectiveType == "collect_item") InventorySystem.AddItem(db, player, target, count);
+            else if (objectiveType == "reach_region") MapSystem.GetMapState(db, player).CurrentRegionId = target;
+            for (int i = 0; i < count; i++)
+                BountySystem.TickBountyObjectives(db, player, new QuestTrigger { Type = objectiveType == "kill_monster" ? "kill_monster" : objectiveType == "reach_region" ? "reach_region" : "item_change", MonsterId = target, RegionId = target });
+            int goldBeforeBounty = player.Gold;
+            var claim = BountySystem.ClaimBounty(db, player, bounty.Id);
+            failures += Expect("world.bounty.acceptCompleteReward", bountyAccept.Success && claim.Success && player.Gold >= goldBeforeBounty && BountySystem.GetBountyState(player).Completed.ContainsKey(bounty.Id));
+
+            Console.WriteLine($"[OK] 世界社交摘要: event={ev.EventId}, questGold={player.Gold}, region={MapSystem.GetMapState(db, player).CurrentRegionId}, sectContribution={SectSystem.GetSectState(player).Contribution}, realmRuns={SecretRealmSystem.GetSecretRealmState(player).CompletedRuns.Count}, bountyRep={BountySystem.GetBountyState(player).Reputation}");
             return failures;
         }
 
